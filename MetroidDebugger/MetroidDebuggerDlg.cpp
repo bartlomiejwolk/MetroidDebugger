@@ -2,9 +2,10 @@
 //
 
 #include "stdafx.h"
-#include "MetroidDebugger.h"
+#include "src/MetroidDebugger.h"
 #include "MetroidDebuggerDlg.h"
 #include "afxdialogex.h"
+#include "resource.h"
 
 
 // CMetroidDebuggerDlg dialog
