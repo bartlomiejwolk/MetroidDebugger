@@ -2,10 +2,10 @@
 
 #include <afxwin.h>
 
-class MetroidDebugger : public CWinApp
+class CMetroidDebugger : public CWinApp
 {
 public:
 	BOOL InitInstance() override;
 };
 
-extern MetroidDebugger MetroidDebuggerApp;
+extern CMetroidDebugger MetroidDebuggerApp;

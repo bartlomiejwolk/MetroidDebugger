@@ -1,8 +1,8 @@
 #include "MetroidDebugger.h"
 
-MetroidDebugger MetroidDebuggerApp;
+CMetroidDebugger MetroidDebuggerApp;
 
-BOOL MetroidDebugger::InitInstance()
+BOOL CMetroidDebugger::InitInstance()
 {
 	CWinApp::InitInstance();
 
