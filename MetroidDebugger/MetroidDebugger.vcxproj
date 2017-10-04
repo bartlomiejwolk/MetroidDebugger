@@ -111,10 +111,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="MetroidDebuggerDlg.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="src\MetroidDebugger.h" />
+    <ClInclude Include="stdafx.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="MetroidDebuggerDlg.cpp" />
     <ClCompile Include="src\MetroidDebugger.cpp" />
   </ItemGroup>
   <ItemGroup>
