@@ -111,10 +111,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="resource.h" />
     <ClInclude Include="src\MetroidDebugger.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\MetroidDebugger.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="MetroidDebugger.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
