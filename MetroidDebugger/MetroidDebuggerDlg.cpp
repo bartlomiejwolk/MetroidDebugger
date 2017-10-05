@@ -29,7 +29,16 @@ void CMetroidDebuggerDlg::DoDataExchange(CDataExchange* pDX)
 
 
 BEGIN_MESSAGE_MAP(CMetroidDebuggerDlg, CDialog)
+	ON_BN_CLICKED(IDC_BUTTON1, &CMetroidDebuggerDlg::OnBnClicked_StartDebugging)
 END_MESSAGE_MAP()
 
 
 // CMetroidDebuggerDlg message handlers
+
+
+void CMetroidDebuggerDlg::OnBnClicked_StartDebugging()
+{
+	OutputDebugStringW(L"???");
+
+	// TODO: Add your control notification handler code here
+}

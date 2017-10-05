@@ -13,6 +13,15 @@ BOOL CMetroidDebugger::InitInstance()
 	m_pMainWnd = &dlg;
 	INT_PTR response = dlg.DoModal();
 
+	if (response == IDOK)
+	{
+		OutputDebugStringW(L"response is IDOK");
+	}
+	else if (response == IDCANCEL)
+	{
+
+	}
+
 	return FALSE;
 }
 
