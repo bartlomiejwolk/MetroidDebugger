@@ -1,6 +1,7 @@
 // MetroidDebuggerDlg.cpp : implementation file
 //
 
+#include <afxdlgs.h>
 #include "stdafx.h"
 #include "src/MetroidDebugger.h"
 #include "MetroidDebuggerDlg.h"
@@ -38,7 +39,12 @@ END_MESSAGE_MAP()
 
 void CMetroidDebuggerDlg::OnBnClicked_StartDebugging()
 {
-	OutputDebugStringW(L"???");
+	// terminate thread if is debugging
 
-	// TODO: Add your control notification handler code here
+	// Open file dialog
+	CFileDialog fileDialog(true, L"EXE", 0, 6, L"Executables|*.exe||");
+	if (fileDialog.DoModal() == IDCANCEL)
+	{
+		return;
+	}
 }
