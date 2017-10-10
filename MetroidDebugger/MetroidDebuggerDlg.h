@@ -23,4 +23,12 @@ protected:
 public:
 	afx_msg void OnBnClicked_StartDebugging();
 	void DebuggerThreadProc();
+	LRESULT OnDebugEventMessage(WPARAM, LPARAM);
+
+private:
+	/*
+	Name of the process to debug.
+	*/
+	CString DebugProcessName;
+	CString GetFileNameFromHandle(HANDLE hFile);
 };
