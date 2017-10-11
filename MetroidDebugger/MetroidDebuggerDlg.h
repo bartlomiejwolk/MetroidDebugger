@@ -23,7 +23,7 @@ protected:
 public:
 	afx_msg void OnBnClicked_StartDebugging();
 	void DebuggerThreadProc();
-	LRESULT OnDebugEventMessage(WPARAM, LPARAM);
+	LRESULT OnDebugEventMessage(WPARAM wParam, LPARAM lParam);
 
 private:
 	/*

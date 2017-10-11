@@ -49,7 +49,7 @@ DWORD WINAPI DebuggerThread(void* param)
 
 void CMetroidDebuggerDlg::OnBnClicked_StartDebugging()
 {
-	// Terminate thread if is debugging
+	// TODO Terminate thread if is debugging
 
 	// Get executable to debug
 	CFileDialog fileDialog(true, L"EXE", 0, 6, L"Executables|*.exe||");
@@ -129,12 +129,22 @@ void CMetroidDebuggerDlg::DebuggerThreadProc()
 		}
 
 		SendMessage(DEBUG_EVENT_MESSAGE, (WPARAM)&eventMessage, debugEvent.dwDebugEventCode);
+		ContinueDebugEvent(debugEvent.dwProcessId, debugEvent.dwThreadId, continueStatus);
+		continueStatus = DBG_CONTINUE;
 	}
 }
 
-LRESULT CMetroidDebuggerDlg::OnDebugEventMessage(WPARAM, LPARAM)
+LRESULT CMetroidDebuggerDlg::OnDebugEventMessage(WPARAM wParam, LPARAM lParam)
 {
-	OutputDebugStringW(_T("???"));
+	CString* pMessage = (CString*)wParam;
+	switch (lParam)
+	{
+	case CREATE_PROCESS_DEBUG_EVENT:
+		OutputDebugStringW(_T("???"));
+		// todo
+		break;
+	}
+
 	return NULL;
 }
 
