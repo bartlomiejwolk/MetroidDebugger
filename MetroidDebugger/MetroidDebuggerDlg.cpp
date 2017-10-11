@@ -7,8 +7,12 @@
 #include "stdafx.h"
 #include "afxdialogex.h"
 #include "resource.h"
+#include "Psapi.h"
+// TODO remove
 #include "src/MetroidDebugger.h"
 #include "MetroidDebuggerDlg.h"
+
+#define BUFSIZE 512
 
 // For thread messaging
 #define DEBUG_EVENT_MESSAGE		WM_APP + 0x100
@@ -23,6 +27,16 @@ CMetroidDebuggerDlg::CMetroidDebuggerDlg(CWnd* pParent /*=NULL*/)
 
 CMetroidDebuggerDlg::~CMetroidDebuggerDlg()
 {
+}
+
+BOOL CMetroidDebuggerDlg::OnInitDialog()
+{
+	CDialog::OnInitDialog();
+
+	m_cDebugEvents.InsertColumn(0, L"Debug Event", LVCFMT_LEFT, 640);
+	m_cDebugEvents.SetExtendedStyle(m_cDebugEvents.GetExtendedStyle() | LVS_EX_GRIDLINES | LVS_EX_FULLROWSELECT);
+
+	return TRUE;
 }
 
 void CMetroidDebuggerDlg::DoDataExchange(CDataExchange* pDX)
@@ -155,9 +169,91 @@ LRESULT CMetroidDebuggerDlg::OnDebugEventMessage(WPARAM wParam, LPARAM lParam)
 	return NULL;
 }
 
+// This function is optimized!
 CString CMetroidDebuggerDlg::GetFileNameFromHandle(HANDLE hFile)
 {
-	return CString();
+	BOOL bSuccess = FALSE;
+	TCHAR pszFilename[MAX_PATH + 1];
+	HANDLE hFileMap;
+
+	CString strFilename;
+
+	// Get the file size.
+	DWORD dwFileSizeHi = 0;
+	DWORD dwFileSizeLo = GetFileSize(hFile, &dwFileSizeHi);
+
+	if (dwFileSizeLo == 0 && dwFileSizeHi == 0)
+	{
+		return CString();
+	}
+
+	// Create a file mapping object.
+	hFileMap = CreateFileMapping(hFile,
+		NULL,
+		PAGE_READONLY,
+		0,
+		1,
+		NULL);
+
+	if (hFileMap)
+	{
+		// Create a file mapping to get the file name.
+		void* pMem = MapViewOfFile(hFileMap, FILE_MAP_READ, 0, 0, 1);
+
+		if (pMem)
+		{
+			if (GetMappedFileName(GetCurrentProcess(),
+				pMem,
+				pszFilename,
+				MAX_PATH))
+			{
+
+				// Translate path with device name to drive letters.
+				TCHAR szTemp[BUFSIZE];
+				szTemp[0] = '\0';
+
+				if (GetLogicalDriveStrings(BUFSIZE - 1, szTemp))
+				{
+					TCHAR szName[MAX_PATH];
+					TCHAR szDrive[3] = TEXT(" :");
+					BOOL bFound = FALSE;
+					TCHAR* p = szTemp;
+
+					do
+					{
+						// Copy the drive letter to the template string
+						*szDrive = *p;
+
+						// Look up each device name
+						if (QueryDosDevice(szDrive, szName, MAX_PATH))
+						{
+							size_t uNameLen = _tcslen(szName);
+
+							if (uNameLen < MAX_PATH)
+							{
+								bFound = _tcsnicmp(pszFilename, szName,
+									uNameLen) == 0;
+
+								if (bFound)
+								{
+									strFilename.Format(L"%s%s", szDrive, pszFilename + uNameLen);
+								}
+							}
+						}
+
+						// Go to the next NULL character.
+						while (*p++);
+					} while (!bFound && *p); // end of string
+				}
+			}
+			bSuccess = TRUE;
+			UnmapViewOfFile(pMem);
+		}
+
+		CloseHandle(hFileMap);
+	}
+
+	return(strFilename);
 }
 
 
