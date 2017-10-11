@@ -16,7 +16,7 @@
 IMPLEMENT_DYNAMIC(CMetroidDebuggerDlg, CDialog)
 
 CMetroidDebuggerDlg::CMetroidDebuggerDlg(CWnd* pParent /*=NULL*/)
-	: CDialog(IDD_DIALOG1, pParent)
+	: CDialog(IDD_METROIDDEBUGGER_DIALOG, pParent)
 {
 
 }
@@ -28,12 +28,14 @@ CMetroidDebuggerDlg::~CMetroidDebuggerDlg()
 void CMetroidDebuggerDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialog::DoDataExchange(pDX);
+	DDX_Control(pDX, IDC_DEBUG_EVENTS, m_cDebugEvents);
 }
 
 
 BEGIN_MESSAGE_MAP(CMetroidDebuggerDlg, CDialog)
-	ON_BN_CLICKED(IDC_BUTTON1, &CMetroidDebuggerDlg::OnBnClicked_StartDebugging)
+	ON_BN_CLICKED(IDC_START_DEBUG, &CMetroidDebuggerDlg::OnBnClicked_StartDebugging)
 	ON_MESSAGE(DEBUG_EVENT_MESSAGE, OnDebugEventMessage)
+	ON_NOTIFY(LVN_ITEMCHANGED, IDC_DEBUG_EVENTS, &CMetroidDebuggerDlg::OnLvnItemchangedDebugEvents)
 END_MESSAGE_MAP()
 
 DWORD WINAPI DebuggerThread(void* param)
@@ -51,8 +53,11 @@ void CMetroidDebuggerDlg::OnBnClicked_StartDebugging()
 {
 	// TODO Terminate thread if is debugging
 
+	// Reset fields
+	TotalEventsCount = 0;
+
 	// Get executable to debug
-	CFileDialog fileDialog(true, L"EXE", 0, 6, L"Executables|*.exe||");
+	CFileDialog fileDialog(true, L"EXE", NULL, 6, L"Executables|*.exe||");
 	if (fileDialog.DoModal() == IDCANCEL)
 	{
 		return;
@@ -140,10 +145,12 @@ LRESULT CMetroidDebuggerDlg::OnDebugEventMessage(WPARAM wParam, LPARAM lParam)
 	switch (lParam)
 	{
 	case CREATE_PROCESS_DEBUG_EVENT:
-		OutputDebugStringW(_T("???"));
-		// todo
+		//OutputDebugStringW(_T("???"));
+		m_cDebugEvents.InsertItem(TotalEventsCount, L"Process started: " + *pMessage);
 		break;
 	}
+
+	TotalEventsCount++;
 
 	return NULL;
 }
@@ -151,4 +158,12 @@ LRESULT CMetroidDebuggerDlg::OnDebugEventMessage(WPARAM wParam, LPARAM lParam)
 CString CMetroidDebuggerDlg::GetFileNameFromHandle(HANDLE hFile)
 {
 	return CString();
+}
+
+
+void CMetroidDebuggerDlg::OnLvnItemchangedDebugEvents(NMHDR *pNMHDR, LRESULT *pResult)
+{
+	LPNMLISTVIEW pNMLV = reinterpret_cast<LPNMLISTVIEW>(pNMHDR);
+	// TODO: Add your control notification handler code here
+	*pResult = 0;
 }

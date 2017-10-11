@@ -1,5 +1,5 @@
 #pragma once
-
+#include <afxcmn.h>
 
 // CMetroidDebuggerDlg dialog
 
@@ -21,14 +21,19 @@ protected:
 
 	DECLARE_MESSAGE_MAP()
 public:
+	CListCtrl m_cDebugEvents;
 	afx_msg void OnBnClicked_StartDebugging();
 	void DebuggerThreadProc();
 	LRESULT OnDebugEventMessage(WPARAM wParam, LPARAM lParam);
 
 private:
+	// TODO init to 0
+	int TotalEventsCount;
 	/*
 	Name of the process to debug.
 	*/
 	CString DebugProcessName;
 	CString GetFileNameFromHandle(HANDLE hFile);
+public:
+	afx_msg void OnLvnItemchangedDebugEvents(NMHDR *pNMHDR, LRESULT *pResult);
 };
