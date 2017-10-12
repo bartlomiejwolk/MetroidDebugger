@@ -20,6 +20,14 @@
 
 IMPLEMENT_DYNAMIC(CMetroidDebuggerDlg, CDialog)
 
+DWORD WINAPI DebuggerThread(void* param)
+{
+	CMetroidDebuggerDlg* thisDlg = static_cast<CMetroidDebuggerDlg*>(param);
+	thisDlg->DebuggerThreadProc();
+	
+	return 0;
+}
+
 CMetroidDebuggerDlg::CMetroidDebuggerDlg(CWnd* pParent /*=NULL*/)
 	: CDialog(IDD_METROIDDEBUGGER_DIALOG, pParent)
 {
@@ -28,37 +36,6 @@ CMetroidDebuggerDlg::CMetroidDebuggerDlg(CWnd* pParent /*=NULL*/)
 
 CMetroidDebuggerDlg::~CMetroidDebuggerDlg()
 {
-}
-
-BOOL CMetroidDebuggerDlg::OnInitDialog()
-{
-	CDialog::OnInitDialog();
-
-	m_cDebugEvents.InsertColumn(0, L"Debug Event", LVCFMT_LEFT, 640);
-	m_cDebugEvents.SetExtendedStyle(m_cDebugEvents.GetExtendedStyle() | LVS_EX_GRIDLINES | LVS_EX_FULLROWSELECT);
-
-	return TRUE;
-}
-
-void CMetroidDebuggerDlg::DoDataExchange(CDataExchange* pDX)
-{
-	CDialog::DoDataExchange(pDX);
-	DDX_Control(pDX, IDC_DEBUG_EVENTS, m_cDebugEvents);
-}
-
-
-BEGIN_MESSAGE_MAP(CMetroidDebuggerDlg, CDialog)
-	ON_BN_CLICKED(IDC_START_DEBUG, &CMetroidDebuggerDlg::OnBnClicked_StartDebugging)
-	ON_MESSAGE(DEBUG_EVENT_MESSAGE, OnDebugEventMessage)
-	ON_NOTIFY(LVN_ITEMCHANGED, IDC_DEBUG_EVENTS, &CMetroidDebuggerDlg::OnLvnItemchangedDebugEvents)
-END_MESSAGE_MAP()
-
-DWORD WINAPI DebuggerThread(void* param)
-{
-	CMetroidDebuggerDlg* thisDlg = static_cast<CMetroidDebuggerDlg*>(param);
-	thisDlg->DebuggerThreadProc();
-	
-	return 0;
 }
 
 // CMetroidDebuggerDlg message handlers
@@ -258,6 +235,36 @@ LRESULT CMetroidDebuggerDlg::OnDebugEventMessage(WPARAM wParam, LPARAM lParam)
 	return NULL;
 }
 
+void CMetroidDebuggerDlg::OnLvnItemchangedDebugEvents(NMHDR *pNMHDR, LRESULT *pResult)
+{
+	LPNMLISTVIEW pNMLV = reinterpret_cast<LPNMLISTVIEW>(pNMHDR);
+	// TODO: Add your control notification handler code here
+	*pResult = 0;
+}
+
+BOOL CMetroidDebuggerDlg::OnInitDialog()
+{
+	CDialog::OnInitDialog();
+
+	m_cDebugEvents.InsertColumn(0, L"Debug Event", LVCFMT_LEFT, 640);
+	m_cDebugEvents.SetExtendedStyle(m_cDebugEvents.GetExtendedStyle() | LVS_EX_GRIDLINES | LVS_EX_FULLROWSELECT);
+
+	return TRUE;
+}
+
+void CMetroidDebuggerDlg::DoDataExchange(CDataExchange* pDX)
+{
+	CDialog::DoDataExchange(pDX);
+	DDX_Control(pDX, IDC_DEBUG_EVENTS, m_cDebugEvents);
+}
+
+
+BEGIN_MESSAGE_MAP(CMetroidDebuggerDlg, CDialog)
+	ON_BN_CLICKED(IDC_START_DEBUG, &CMetroidDebuggerDlg::OnBnClicked_StartDebugging)
+	ON_MESSAGE(DEBUG_EVENT_MESSAGE, OnDebugEventMessage)
+	ON_NOTIFY(LVN_ITEMCHANGED, IDC_DEBUG_EVENTS, &CMetroidDebuggerDlg::OnLvnItemchangedDebugEvents)
+END_MESSAGE_MAP()
+
 // This function is optimized!
 CString CMetroidDebuggerDlg::GetFileNameFromHandle(HANDLE hFile)
 {
@@ -345,10 +352,3 @@ CString CMetroidDebuggerDlg::GetFileNameFromHandle(HANDLE hFile)
 	return(strFilename);
 }
 
-
-void CMetroidDebuggerDlg::OnLvnItemchangedDebugEvents(NMHDR *pNMHDR, LRESULT *pResult)
-{
-	LPNMLISTVIEW pNMLV = reinterpret_cast<LPNMLISTVIEW>(pNMHDR);
-	// TODO: Add your control notification handler code here
-	*pResult = 0;
-}

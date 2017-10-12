@@ -1,19 +1,37 @@
 #pragma once
 #include <afxcmn.h>
 
-// CMetroidDebuggerDlg dialog
-
 class CMetroidDebuggerDlg : public CDialog
 {
 	DECLARE_DYNAMIC(CMetroidDebuggerDlg)
 
 public:
+	/*
+	*/
+	CListCtrl m_cDebugEvents;
+
 	CMetroidDebuggerDlg(CWnd* pParent = NULL);   // standard constructor
 	virtual ~CMetroidDebuggerDlg();
 
+	/*
+	*/
+	afx_msg void OnBnClicked_StartDebugging();
+	
+	/*
+	*/
+	void DebuggerThreadProc();
+	
+	/*
+	*/
+	LRESULT OnDebugEventMessage(WPARAM wParam, LPARAM lParam);
+	
+	/*
+	*/
+	afx_msg void OnLvnItemchangedDebugEvents(NMHDR *pNMHDR, LRESULT *pResult);
+
 // Dialog Data
 #ifdef AFX_DESIGN_TIME
-	enum { IDD = IDD_DIALOG1 };
+	enum { IDD = IDD_METROIDDEBUGGER_DIALOG };
 #endif
 
 protected:
@@ -21,11 +39,6 @@ protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
 
 	DECLARE_MESSAGE_MAP()
-public:
-	CListCtrl m_cDebugEvents;
-	afx_msg void OnBnClicked_StartDebugging();
-	void DebuggerThreadProc();
-	LRESULT OnDebugEventMessage(WPARAM wParam, LPARAM lParam);
 
 private:
 	// TODO init to 0
@@ -36,10 +49,11 @@ private:
 	int ExceptionCount;
 
 	/*
-	Name of the process to debug.
+	Full path to the executable to debug.
 	*/
 	CString DebugProcessName;
+
+	/*
+	*/
 	CString GetFileNameFromHandle(HANDLE hFile);
-public:
-	afx_msg void OnLvnItemchangedDebugEvents(NMHDR *pNMHDR, LRESULT *pResult);
 };
