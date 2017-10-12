@@ -73,6 +73,7 @@ void CMetroidDebuggerDlg::OnBnClicked_StartDebugging()
 	ThreadCount = 1;
 	DLLCount = 0;
 	OutputDebugStringCount = 0;
+	ExceptionCount = 0;
 
 	// Get executable to debug
 	CFileDialog fileDialog(true, L"EXE", NULL, 6, L"Executables|*.exe||");
@@ -187,7 +188,27 @@ void CMetroidDebuggerDlg::DebuggerThreadProc()
 			break;
 		
 			case EXCEPTION_DEBUG_EVENT:
+			{
+				EXCEPTION_DEBUG_INFO& exceptionInfo = debugEvent.u.Exception;
+
+				switch (exceptionInfo.ExceptionRecord.ExceptionCode)
+				{
+				case STATUS_BREAKPOINT:
+					eventMessage = "Break point";
+					break;
+
+				default:
+					if (exceptionInfo.dwFirstChance == 1)
+					{
+						eventMessage.Format(
+							L"First chance exception at %x, exception code: 0x%08x",
+							exceptionInfo.ExceptionRecord.ExceptionAddress,
+							exceptionInfo.ExceptionRecord.ExceptionCode);
+					}
+					continueStatus = DBG_EXCEPTION_NOT_HANDLED;
+				}
 				break;
+			}
 		}
 
 		SendMessage(DEBUG_EVENT_MESSAGE, (WPARAM)&eventMessage, debugEvent.dwDebugEventCode);
@@ -225,6 +246,10 @@ LRESULT CMetroidDebuggerDlg::OnDebugEventMessage(WPARAM wParam, LPARAM lParam)
 	case OUTPUT_DEBUG_STRING_EVENT:
 		m_cDebugEvents.InsertItem(TotalEventsCount, L"Debug Message: " + *pMessage);
 		OutputDebugStringCount++;
+		break;
+	case EXCEPTION_DEBUG_EVENT:
+		m_cDebugEvents.InsertItem(TotalEventsCount, L"Debug Exception: " + *pMessage);
+		ExceptionCount++;
 		break;
 	}
 
