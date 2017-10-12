@@ -70,44 +70,53 @@ void CMetroidDebuggerDlg::OnBnClicked_StartDebugging()
 
 void CMetroidDebuggerDlg::DebuggerThreadProc()
 {
-	STARTUPINFO startupInfo;
+	// Create process to debug
 	PROCESS_INFORMATION processInfo;
-
-	ZeroMemory(&startupInfo, sizeof(startupInfo));
-	startupInfo.cb = sizeof(startupInfo);
-	ZeroMemory(&processInfo, sizeof(processInfo));
-
-	CreateProcess(
-		DebugProcessName,
-		NULL,
-		NULL,
-		NULL,
-		false,
-		DEBUG_ONLY_THIS_PROCESS,
-		NULL,
-		NULL,
-		&startupInfo,
-		&processInfo);
-
-	DEBUG_EVENT debugEvent = {};
-	CString eventMessage;
-	DWORD continueStatus = DBG_CONTINUE;
-	std::map<LPVOID, CString> DLLNameMap;
-	
-	bool continueDebugging = true;
-	while (continueDebugging)
 	{
-		if (!WaitForDebugEvent(&debugEvent, INFINITE))
-		{
-			return;
-		}
+		STARTUPINFO startupInfo;
+		
+		ZeroMemory(&startupInfo, sizeof(startupInfo));
+		startupInfo.cb = sizeof(startupInfo);
+		ZeroMemory(&processInfo, sizeof(processInfo));
 
-		switch (debugEvent.dwDebugEventCode)
+		CreateProcess(
+			DebugProcessName,
+			NULL,
+			NULL,
+			NULL,
+			false,
+			DEBUG_ONLY_THIS_PROCESS,
+			NULL,
+			NULL,
+			&startupInfo,
+			&processInfo);
+	}
+
+	// Main debugger loop
+	DEBUG_EVENT debugEvent = {};
+	// message displayed to the user
+	CString eventMessage;
+	// next debugger action
+	DWORD continueStatus = DBG_CONTINUE;
+	{
+		// used to report about unloaded DLLs
+		std::map<LPVOID, CString> DLLNameMap;
+		bool continueDebugging = true;
+		while (continueDebugging)
 		{
+			// Return if there's no debug event to process
+			if (!WaitForDebugEvent(&debugEvent, INFINITE))
+			{
+				return;
+			}
+
+			// Handle debug event
+			switch (debugEvent.dwDebugEventCode)
+			{
 			case CREATE_PROCESS_DEBUG_EVENT:
 				eventMessage = GetFileNameFromHandle(debugEvent.u.CreateProcessInfo.hFile);
 				break;
-			
+
 			case CREATE_THREAD_DEBUG_EVENT:
 				eventMessage.Format(
 					L"Thread 0x%x (Id. %d) created at: 0x%x",
@@ -115,41 +124,43 @@ void CMetroidDebuggerDlg::DebuggerThreadProc()
 					debugEvent.dwThreadId,
 					debugEvent.u.CreateThread.lpStartAddress);
 				break;
-			
+
 			case EXIT_THREAD_DEBUG_EVENT:
 				eventMessage.Format(
 					L"Thread %d exited with code: %d",
 					debugEvent.dwThreadId,
 					debugEvent.u.ExitThread.dwExitCode);
 				break;
-		
+
 			case EXIT_PROCESS_DEBUG_EVENT:
 				eventMessage.Format(L"0x%x", debugEvent.u.ExitProcess.dwExitCode);
 				continueDebugging = false;
 				break;
-		
+
 			case LOAD_DLL_DEBUG_EVENT:
 				eventMessage = GetFileNameFromHandle(debugEvent.u.LoadDll.hFile);
 				DLLNameMap.insert(std::make_pair(debugEvent.u.LoadDll.lpBaseOfDll, eventMessage));
 				eventMessage.AppendFormat(L" %x", debugEvent.u.LoadDll.lpBaseOfDll);
 				break;
-		
+
 			case UNLOAD_DLL_DEBUG_EVENT:
 				eventMessage.Format(L"%s", DLLNameMap[debugEvent.u.UnloadDll.lpBaseOfDll]);
 				break;
-		
+
 			case OUTPUT_DEBUG_STRING_EVENT:
 				eventMessage = GetDebugStringFromDebugEvent(debugEvent, processInfo);
 				break;
-		
+
 			case EXCEPTION_DEBUG_EVENT:
+				// takes OUT args
 				ProcessExceptionDebugEvent(debugEvent, eventMessage, continueStatus);
 				break;
-		}
+			}
 
-		SendMessage(DEBUG_EVENT_MESSAGE, (WPARAM)&eventMessage, debugEvent.dwDebugEventCode);
-		ContinueDebugEvent(debugEvent.dwProcessId, debugEvent.dwThreadId, continueStatus);
-		continueStatus = DBG_CONTINUE;
+			SendMessage(DEBUG_EVENT_MESSAGE, (WPARAM)&eventMessage, debugEvent.dwDebugEventCode);
+			ContinueDebugEvent(debugEvent.dwProcessId, debugEvent.dwThreadId, continueStatus);
+			continueStatus = DBG_CONTINUE;
+		}
 	}
 }
 

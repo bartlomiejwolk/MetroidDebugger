@@ -27,7 +27,7 @@ public:
 	
 	/*
 	*/
-	afx_msg void OnLvnItemchangedDebugEvents(NMHDR *pNMHDR, LRESULT *pResult);
+	afx_msg void OnLvnItemchangedDebugEvents(NMHDR* pNMHDR, LRESULT* pResult);
 
 // Dialog Data
 #ifdef AFX_DESIGN_TIME
