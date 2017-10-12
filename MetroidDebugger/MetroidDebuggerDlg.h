@@ -32,6 +32,8 @@ private:
 	int TotalEventsCount;
 	int ThreadCount;
 	int DLLCount;
+	int OutputDebugStringCount;
+
 	/*
 	Name of the process to debug.
 	*/

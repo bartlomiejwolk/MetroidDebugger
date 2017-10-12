@@ -72,6 +72,7 @@ void CMetroidDebuggerDlg::OnBnClicked_StartDebugging()
 	TotalEventsCount = 0;
 	ThreadCount = 1;
 	DLLCount = 0;
+	OutputDebugStringCount = 0;
 
 	// Get executable to debug
 	CFileDialog fileDialog(true, L"EXE", NULL, 6, L"Executables|*.exe||");
@@ -160,7 +161,30 @@ void CMetroidDebuggerDlg::DebuggerThreadProc()
 				break;
 		
 			case OUTPUT_DEBUG_STRING_EVENT:
-				break;
+			{
+				OUTPUT_DEBUG_STRING_INFO& debugStringInfo = debugEvent.u.DebugString;
+				
+				WCHAR* msg = new WCHAR[debugStringInfo.nDebugStringLength];
+				ZeroMemory(msg, debugStringInfo.nDebugStringLength);
+				
+				ReadProcessMemory(
+					processInfo.hProcess,
+					debugStringInfo.lpDebugStringData,
+					msg,
+					debugStringInfo.nDebugStringLength,
+					NULL);
+
+				if (debugStringInfo.fUnicode)
+				{
+					eventMessage = msg;
+				}
+				else
+				{
+					eventMessage = (LPSTR)msg;
+				}
+				delete[] msg;
+			}
+			break;
 		
 			case EXCEPTION_DEBUG_EVENT:
 				break;
@@ -197,6 +221,10 @@ LRESULT CMetroidDebuggerDlg::OnDebugEventMessage(WPARAM wParam, LPARAM lParam)
 		break;
 	case UNLOAD_DLL_DEBUG_EVENT:
 		m_cDebugEvents.InsertItem(TotalEventsCount, L"DLL Unloaded: " + *pMessage);
+		break;
+	case OUTPUT_DEBUG_STRING_EVENT:
+		m_cDebugEvents.InsertItem(TotalEventsCount, L"Debug Message: " + *pMessage);
+		OutputDebugStringCount++;
 		break;
 	}
 
