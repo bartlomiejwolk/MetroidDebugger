@@ -143,24 +143,7 @@ void CMetroidDebuggerDlg::DebuggerThreadProc()
 				break;
 		
 			case EXCEPTION_DEBUG_EVENT:
-				EXCEPTION_DEBUG_INFO& exceptionInfo = debugEvent.u.Exception;
-
-				switch (exceptionInfo.ExceptionRecord.ExceptionCode)
-				{
-				case STATUS_BREAKPOINT:
-					eventMessage = "Break point";
-					break;
-
-				default:
-					if (exceptionInfo.dwFirstChance == 1)
-					{
-						eventMessage.Format(
-							L"First chance exception at %x, exception code: 0x%08x",
-							exceptionInfo.ExceptionRecord.ExceptionAddress,
-							exceptionInfo.ExceptionRecord.ExceptionCode);
-					}
-					continueStatus = DBG_EXCEPTION_NOT_HANDLED;
-				}
+				ProcessExceptionDebugEvent(debugEvent, eventMessage, continueStatus);
 				break;
 		}
 
@@ -168,6 +151,30 @@ void CMetroidDebuggerDlg::DebuggerThreadProc()
 		ContinueDebugEvent(debugEvent.dwProcessId, debugEvent.dwThreadId, continueStatus);
 		continueStatus = DBG_CONTINUE;
 	}
+}
+
+void CMetroidDebuggerDlg::ProcessExceptionDebugEvent(
+	const DEBUG_EVENT &debugEvent, 
+	CString &eventMessage, 
+	DWORD& continueStatus) const
+{
+	const EXCEPTION_DEBUG_INFO& exceptionInfo = debugEvent.u.Exception;
+	switch (exceptionInfo.ExceptionRecord.ExceptionCode)
+	{
+	case STATUS_BREAKPOINT:
+		eventMessage = "Break point";
+		break;
+
+	default:
+		if (exceptionInfo.dwFirstChance == 1)
+		{
+			eventMessage.Format(
+				L"First chance exception at %x, exception code: 0x%08x",
+				exceptionInfo.ExceptionRecord.ExceptionAddress,
+				exceptionInfo.ExceptionRecord.ExceptionCode);
+		}
+		continueStatus = DBG_EXCEPTION_NOT_HANDLED;
+	}		
 }
 
 CString CMetroidDebuggerDlg::GetDebugStringFromDebugEvent(
@@ -186,18 +193,15 @@ CString CMetroidDebuggerDlg::GetDebugStringFromDebugEvent(
 		debugStringInfo.nDebugStringLength,
 		NULL);
 
-	CString eventMessage;
 	if (debugStringInfo.fUnicode)
 	{
-		eventMessage = msg;
+		return msg;
 	}
 	else
 	{
-		eventMessage = (LPSTR)msg;
+		return (LPSTR)msg;
 	}
 	delete[] msg;		
-
-	return eventMessage;
 }
 
 LRESULT CMetroidDebuggerDlg::OnDebugEventMessage(WPARAM wParam, LPARAM lParam)

@@ -23,9 +23,16 @@ public:
 
 	/*
 	*/
+	void ProcessExceptionDebugEvent(
+		const DEBUG_EVENT& debugEvent, 
+		CString& eventMessage, 
+		DWORD& continueStatus) const;
+
+	/*
+	*/
 	CString GetDebugStringFromDebugEvent(
-		const DEBUG_EVENT &debugEvent, 
-		const PROCESS_INFORMATION &processInfo) const;
+		const DEBUG_EVENT& debugEvent, 
+		const PROCESS_INFORMATION& processInfo) const;
 
 	/*
 	*/
