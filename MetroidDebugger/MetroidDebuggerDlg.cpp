@@ -156,6 +156,7 @@ void CMetroidDebuggerDlg::DebuggerThreadProc()
 				break;
 		
 			case UNLOAD_DLL_DEBUG_EVENT:
+				eventMessage.Format(L"%s", DLLNameMap[debugEvent.u.UnloadDll.lpBaseOfDll]);
 				break;
 		
 			case OUTPUT_DEBUG_STRING_EVENT:
@@ -193,6 +194,9 @@ LRESULT CMetroidDebuggerDlg::OnDebugEventMessage(WPARAM wParam, LPARAM lParam)
 	case LOAD_DLL_DEBUG_EVENT:
 		m_cDebugEvents.InsertItem(TotalEventsCount, L"DLL loaded: " + *pMessage);
 		DLLCount++;
+		break;
+	case UNLOAD_DLL_DEBUG_EVENT:
+		m_cDebugEvents.InsertItem(TotalEventsCount, L"DLL Unloaded: " + *pMessage);
 		break;
 	}
 
