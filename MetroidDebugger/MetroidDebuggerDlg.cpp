@@ -142,6 +142,8 @@ void CMetroidDebuggerDlg::DebuggerThreadProc()
 				break;
 		
 			case EXIT_PROCESS_DEBUG_EVENT:
+				eventMessage.Format(L"0x%x", debugEvent.u.ExitProcess.dwExitCode);
+				continueDebugging = false;
 				break;
 		
 			case LOAD_DLL_DEBUG_EVENT:
@@ -179,6 +181,8 @@ LRESULT CMetroidDebuggerDlg::OnDebugEventMessage(WPARAM wParam, LPARAM lParam)
 		m_cDebugEvents.InsertItem(TotalEventsCount, *pMessage);
 		ThreadCount--;
 		break;
+	case EXIT_PROCESS_DEBUG_EVENT:
+		m_cDebugEvents.InsertItem(TotalEventsCount, L"Process exited with code: " + *pMessage);
 	}
 
 	TotalEventsCount++;
