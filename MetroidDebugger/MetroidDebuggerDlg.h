@@ -31,6 +31,7 @@ private:
 	// TODO init to 0
 	int TotalEventsCount;
 	int ThreadCount;
+	int DLLCount;
 	/*
 	Name of the process to debug.
 	*/

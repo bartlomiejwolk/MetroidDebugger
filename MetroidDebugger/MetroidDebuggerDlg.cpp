@@ -11,6 +11,7 @@
 // TODO remove
 #include "src/MetroidDebugger.h"
 #include "MetroidDebuggerDlg.h"
+#include <map>
 
 #define BUFSIZE 512
 
@@ -70,6 +71,7 @@ void CMetroidDebuggerDlg::OnBnClicked_StartDebugging()
 	// Reset fields
 	TotalEventsCount = 0;
 	ThreadCount = 1;
+	DLLCount = 0;
 
 	// Get executable to debug
 	CFileDialog fileDialog(true, L"EXE", NULL, 6, L"Executables|*.exe||");
@@ -111,6 +113,7 @@ void CMetroidDebuggerDlg::DebuggerThreadProc()
 	DEBUG_EVENT debugEvent;
 	CString eventMessage;
 	DWORD continueStatus = DBG_CONTINUE;
+	std::map<LPVOID, CString> DLLNameMap;
 	
 	bool continueDebugging = true;
 	while (continueDebugging)
@@ -147,6 +150,9 @@ void CMetroidDebuggerDlg::DebuggerThreadProc()
 				break;
 		
 			case LOAD_DLL_DEBUG_EVENT:
+				eventMessage = GetFileNameFromHandle(debugEvent.u.LoadDll.hFile);
+				DLLNameMap.insert(std::make_pair(debugEvent.u.LoadDll.lpBaseOfDll, eventMessage));
+				eventMessage.AppendFormat(L" %x", debugEvent.u.LoadDll.lpBaseOfDll);
 				break;
 		
 			case UNLOAD_DLL_DEBUG_EVENT:
@@ -183,6 +189,11 @@ LRESULT CMetroidDebuggerDlg::OnDebugEventMessage(WPARAM wParam, LPARAM lParam)
 		break;
 	case EXIT_PROCESS_DEBUG_EVENT:
 		m_cDebugEvents.InsertItem(TotalEventsCount, L"Process exited with code: " + *pMessage);
+		break;
+	case LOAD_DLL_DEBUG_EVENT:
+		m_cDebugEvents.InsertItem(TotalEventsCount, L"DLL loaded: " + *pMessage);
+		DLLCount++;
+		break;
 	}
 
 	TotalEventsCount++;
