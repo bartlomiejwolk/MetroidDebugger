@@ -139,33 +139,10 @@ void CMetroidDebuggerDlg::DebuggerThreadProc()
 				break;
 		
 			case OUTPUT_DEBUG_STRING_EVENT:
-			{
-				OUTPUT_DEBUG_STRING_INFO& debugStringInfo = debugEvent.u.DebugString;
-				
-				WCHAR* msg = new WCHAR[debugStringInfo.nDebugStringLength];
-				ZeroMemory(msg, debugStringInfo.nDebugStringLength);
-				
-				ReadProcessMemory(
-					processInfo.hProcess,
-					debugStringInfo.lpDebugStringData,
-					msg,
-					debugStringInfo.nDebugStringLength,
-					NULL);
-
-				if (debugStringInfo.fUnicode)
-				{
-					eventMessage = msg;
-				}
-				else
-				{
-					eventMessage = (LPSTR)msg;
-				}
-				delete[] msg;
-			}
-			break;
+				eventMessage = GetDebugStringFromDebugEvent(debugEvent, processInfo);
+				break;
 		
 			case EXCEPTION_DEBUG_EVENT:
-			{
 				EXCEPTION_DEBUG_INFO& exceptionInfo = debugEvent.u.Exception;
 
 				switch (exceptionInfo.ExceptionRecord.ExceptionCode)
@@ -185,13 +162,42 @@ void CMetroidDebuggerDlg::DebuggerThreadProc()
 					continueStatus = DBG_EXCEPTION_NOT_HANDLED;
 				}
 				break;
-			}
 		}
 
 		SendMessage(DEBUG_EVENT_MESSAGE, (WPARAM)&eventMessage, debugEvent.dwDebugEventCode);
 		ContinueDebugEvent(debugEvent.dwProcessId, debugEvent.dwThreadId, continueStatus);
 		continueStatus = DBG_CONTINUE;
 	}
+}
+
+CString CMetroidDebuggerDlg::GetDebugStringFromDebugEvent(
+	const DEBUG_EVENT &debugEvent, 
+	const PROCESS_INFORMATION &processInfo) const
+{
+	const OUTPUT_DEBUG_STRING_INFO& debugStringInfo = debugEvent.u.DebugString;
+
+	WCHAR* msg = new WCHAR[debugStringInfo.nDebugStringLength];
+	ZeroMemory(msg, debugStringInfo.nDebugStringLength);
+
+	ReadProcessMemory(
+		processInfo.hProcess,
+		debugStringInfo.lpDebugStringData,
+		msg,
+		debugStringInfo.nDebugStringLength,
+		NULL);
+
+	CString eventMessage;
+	if (debugStringInfo.fUnicode)
+	{
+		eventMessage = msg;
+	}
+	else
+	{
+		eventMessage = (LPSTR)msg;
+	}
+	delete[] msg;		
+
+	return eventMessage;
 }
 
 LRESULT CMetroidDebuggerDlg::OnDebugEventMessage(WPARAM wParam, LPARAM lParam)

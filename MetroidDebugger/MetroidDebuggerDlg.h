@@ -20,7 +20,13 @@ public:
 	/*
 	*/
 	void DebuggerThreadProc();
-	
+
+	/*
+	*/
+	CString GetDebugStringFromDebugEvent(
+		const DEBUG_EVENT &debugEvent, 
+		const PROCESS_INFORMATION &processInfo) const;
+
 	/*
 	*/
 	LRESULT OnDebugEventMessage(WPARAM wParam, LPARAM lParam);
