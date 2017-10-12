@@ -126,6 +126,11 @@ void CMetroidDebuggerDlg::DebuggerThreadProc()
 				break;
 			
 			case CREATE_THREAD_DEBUG_EVENT:
+				eventMessage.Format(
+					L"Thread 0x%x (Id. %d) created at: 0x%x",
+					debugEvent.u.CreateThread.hThread,
+					debugEvent.dwThreadId,
+					debugEvent.u.CreateThread.lpStartAddress);
 				break;
 			
 			case EXIT_THREAD_DEBUG_EVENT:
@@ -159,8 +164,10 @@ LRESULT CMetroidDebuggerDlg::OnDebugEventMessage(WPARAM wParam, LPARAM lParam)
 	switch (lParam)
 	{
 	case CREATE_PROCESS_DEBUG_EVENT:
-		//OutputDebugStringW(_T("???"));
 		m_cDebugEvents.InsertItem(TotalEventsCount, L"Process started: " + *pMessage);
+		break;
+	case CREATE_THREAD_DEBUG_EVENT:
+		m_cDebugEvents.InsertItem(TotalEventsCount, *pMessage);
 		break;
 	}
 
