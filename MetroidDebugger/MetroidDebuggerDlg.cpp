@@ -112,7 +112,7 @@ void CMetroidDebuggerDlg::DebuggerThreadProc()
 		&startupInfo,
 		&processInfo);
 
-	DEBUG_EVENT debugEvent;
+	DEBUG_EVENT debugEvent = {};
 	CString eventMessage;
 	DWORD continueStatus = DBG_CONTINUE;
 	std::map<LPVOID, CString> DLLNameMap;
