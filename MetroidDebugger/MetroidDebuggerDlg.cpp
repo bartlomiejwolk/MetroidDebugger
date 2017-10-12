@@ -69,6 +69,7 @@ void CMetroidDebuggerDlg::OnBnClicked_StartDebugging()
 
 	// Reset fields
 	TotalEventsCount = 0;
+	ThreadCount = 1;
 
 	// Get executable to debug
 	CFileDialog fileDialog(true, L"EXE", NULL, 6, L"Executables|*.exe||");
@@ -134,6 +135,10 @@ void CMetroidDebuggerDlg::DebuggerThreadProc()
 				break;
 			
 			case EXIT_THREAD_DEBUG_EVENT:
+				eventMessage.Format(
+					L"Thread %d exited with code: %d",
+					debugEvent.dwThreadId,
+					debugEvent.u.ExitThread.dwExitCode);
 				break;
 		
 			case EXIT_PROCESS_DEBUG_EVENT:
@@ -168,6 +173,11 @@ LRESULT CMetroidDebuggerDlg::OnDebugEventMessage(WPARAM wParam, LPARAM lParam)
 		break;
 	case CREATE_THREAD_DEBUG_EVENT:
 		m_cDebugEvents.InsertItem(TotalEventsCount, *pMessage);
+		ThreadCount++;
+		break;
+	case EXIT_THREAD_DEBUG_EVENT:
+		m_cDebugEvents.InsertItem(TotalEventsCount, *pMessage);
+		ThreadCount--;
 		break;
 	}
 

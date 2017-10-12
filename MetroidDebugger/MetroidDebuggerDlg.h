@@ -30,6 +30,7 @@ public:
 private:
 	// TODO init to 0
 	int TotalEventsCount;
+	int ThreadCount;
 	/*
 	Name of the process to debug.
 	*/
