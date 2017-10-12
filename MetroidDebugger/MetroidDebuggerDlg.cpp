@@ -153,57 +153,6 @@ void CMetroidDebuggerDlg::DebuggerThreadProc()
 	}
 }
 
-void CMetroidDebuggerDlg::ProcessExceptionDebugEvent(
-	const DEBUG_EVENT &debugEvent, 
-	CString &eventMessage, 
-	DWORD& continueStatus) const
-{
-	const EXCEPTION_DEBUG_INFO& exceptionInfo = debugEvent.u.Exception;
-	switch (exceptionInfo.ExceptionRecord.ExceptionCode)
-	{
-	case STATUS_BREAKPOINT:
-		eventMessage = "Break point";
-		break;
-
-	default:
-		if (exceptionInfo.dwFirstChance == 1)
-		{
-			eventMessage.Format(
-				L"First chance exception at %x, exception code: 0x%08x",
-				exceptionInfo.ExceptionRecord.ExceptionAddress,
-				exceptionInfo.ExceptionRecord.ExceptionCode);
-		}
-		continueStatus = DBG_EXCEPTION_NOT_HANDLED;
-	}		
-}
-
-CString CMetroidDebuggerDlg::GetDebugStringFromDebugEvent(
-	const DEBUG_EVENT &debugEvent, 
-	const PROCESS_INFORMATION &processInfo) const
-{
-	const OUTPUT_DEBUG_STRING_INFO& debugStringInfo = debugEvent.u.DebugString;
-
-	WCHAR* msg = new WCHAR[debugStringInfo.nDebugStringLength];
-	ZeroMemory(msg, debugStringInfo.nDebugStringLength);
-
-	ReadProcessMemory(
-		processInfo.hProcess,
-		debugStringInfo.lpDebugStringData,
-		msg,
-		debugStringInfo.nDebugStringLength,
-		NULL);
-
-	if (debugStringInfo.fUnicode)
-	{
-		return msg;
-	}
-	else
-	{
-		return (LPSTR)msg;
-	}
-	delete[] msg;		
-}
-
 LRESULT CMetroidDebuggerDlg::OnDebugEventMessage(WPARAM wParam, LPARAM lParam)
 {
 	CString* pMessage = (CString*)wParam;
@@ -362,3 +311,54 @@ CString CMetroidDebuggerDlg::GetFileNameFromHandle(HANDLE hFile)
 	return(strFilename);
 }
 
+
+CString CMetroidDebuggerDlg::GetDebugStringFromDebugEvent(
+	const DEBUG_EVENT &debugEvent, 
+	const PROCESS_INFORMATION &processInfo) const
+{
+	const OUTPUT_DEBUG_STRING_INFO& debugStringInfo = debugEvent.u.DebugString;
+
+	WCHAR* msg = new WCHAR[debugStringInfo.nDebugStringLength];
+	ZeroMemory(msg, debugStringInfo.nDebugStringLength);
+
+	ReadProcessMemory(
+		processInfo.hProcess,
+		debugStringInfo.lpDebugStringData,
+		msg,
+		debugStringInfo.nDebugStringLength,
+		NULL);
+
+	if (debugStringInfo.fUnicode)
+	{
+		return msg;
+	}
+	else
+	{
+		return (LPSTR)msg;
+	}
+	delete[] msg;		
+}
+
+void CMetroidDebuggerDlg::ProcessExceptionDebugEvent(
+	const DEBUG_EVENT &debugEvent, 
+	CString &eventMessage, 
+	DWORD& continueStatus) const
+{
+	const EXCEPTION_DEBUG_INFO& exceptionInfo = debugEvent.u.Exception;
+	switch (exceptionInfo.ExceptionRecord.ExceptionCode)
+	{
+	case STATUS_BREAKPOINT:
+		eventMessage = "Break point";
+		break;
+
+	default:
+		if (exceptionInfo.dwFirstChance == 1)
+		{
+			eventMessage.Format(
+				L"First chance exception at %x, exception code: 0x%08x",
+				exceptionInfo.ExceptionRecord.ExceptionAddress,
+				exceptionInfo.ExceptionRecord.ExceptionCode);
+		}
+		continueStatus = DBG_EXCEPTION_NOT_HANDLED;
+	}		
+}
