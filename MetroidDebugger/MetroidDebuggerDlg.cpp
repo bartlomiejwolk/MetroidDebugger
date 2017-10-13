@@ -4,14 +4,12 @@
 #include <afxdlgs.h>
 #include <afxstr.h>
 #include <concrt.h>
+#include <map>
 #include "stdafx.h"
 #include "afxdialogex.h"
 #include "resource.h"
 #include "Psapi.h"
-// TODO remove
-#include "src/MetroidDebugger.h"
 #include "MetroidDebuggerDlg.h"
-#include <map>
 
 #define BUFSIZE 512
 
