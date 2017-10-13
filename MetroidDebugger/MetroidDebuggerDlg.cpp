@@ -29,21 +29,17 @@ DWORD WINAPI DebuggerThread(void* param)
 CMetroidDebuggerDlg::CMetroidDebuggerDlg(CWnd* pParent /*=NULL*/)
 	: CDialog(IDD_METROIDDEBUGGER_DIALOG, pParent)
 {
-
 }
 
 CMetroidDebuggerDlg::~CMetroidDebuggerDlg()
 {
 }
 
-// CMetroidDebuggerDlg message handlers
-
-
 void CMetroidDebuggerDlg::OnBnClicked_StartDebugging()
 {
 	// TODO Terminate thread if is debugging
 
-	// Reset fields
+	// Init fields
 	TotalEventsCount = 0;
 	ThreadCount = 1;
 	DLLCount = 0;
@@ -99,6 +95,7 @@ void CMetroidDebuggerDlg::DebuggerThreadProc()
 	{
 		// used to report about unloaded DLLs
 		std::map<LPVOID, CString> DLLNameMap;
+
 		bool continueDebugging = true;
 		while (continueDebugging)
 		{
