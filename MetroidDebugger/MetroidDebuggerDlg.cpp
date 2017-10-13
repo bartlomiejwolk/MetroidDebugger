@@ -196,6 +196,23 @@ LRESULT CMetroidDebuggerDlg::OnDebugEventMessage(WPARAM wParam, LPARAM lParam)
 	}
 
 	TotalEventsCount++;
+	m_cDebugEvents.EnsureVisible(TotalEventsCount, false);
+	CString label;
+
+	label.Format(L"Total Debugging events: %d", TotalEventsCount);
+	TotalEventsControl.SetWindowText(label);
+
+	label.Format(L"Threads: %d", ThreadCount);
+	ThreadCountControl.SetWindowText(label);
+
+	label.Format(L"DLLs: %d", DLLCount);
+	DLLCountControl.SetWindowText(label);
+
+	label.Format(L"Exceptions: %d", ExceptionCount);
+	ExceptionCountControl.SetWindowText(label);
+
+	label.Format(L"OutputDebugs: %d", OutputDebugStringCount);
+	OutputDebugControl.SetWindowText(label);
 
 	return NULL;
 }
@@ -221,6 +238,11 @@ void CMetroidDebuggerDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialog::DoDataExchange(pDX);
 	DDX_Control(pDX, IDC_DEBUG_EVENTS, m_cDebugEvents);
+	DDX_Control(pDX, IDC_TOTAL_EVENTS, TotalEventsControl);
+	DDX_Control(pDX, IDC_THREAD_COUNT, ThreadCountControl);
+	DDX_Control(pDX, IDC_DLL_COUNT, DLLCountControl);
+	DDX_Control(pDX, IDC_DEBUG_COUNT, OutputDebugControl);
+	DDX_Control(pDX, IDC_EXCEPTION_COUNT, ExceptionCountControl);
 }
 
 

@@ -57,6 +57,13 @@ private:
 	int OutputDebugStringCount;
 	int ExceptionCount;
 
+	// TODO rename
+	CStatic ThreadCountControl;
+	CStatic DLLCountControl;
+	CStatic TotalEventsControl;
+	CStatic OutputDebugControl;
+	CStatic ExceptionCountControl;
+
 	/*
 	*/
 	CString GetFileNameFromHandle(HANDLE hFile);
