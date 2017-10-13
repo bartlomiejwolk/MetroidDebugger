@@ -41,17 +41,17 @@ protected:
 	DECLARE_MESSAGE_MAP()
 
 private:
+	/*
+	Full path to the executable to debug.
+	*/
+	CString DebugProcessName;
+
 	// TODO init to 0
 	int TotalEventsCount;
 	int ThreadCount;
 	int DLLCount;
 	int OutputDebugStringCount;
 	int ExceptionCount;
-
-	/*
-	Full path to the executable to debug.
-	*/
-	CString DebugProcessName;
 
 	/*
 	*/
