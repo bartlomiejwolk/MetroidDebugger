@@ -7,6 +7,7 @@ class CMetroidDebuggerDlg : public CDialog
 
 public:
 	/*
+	Contains debug messages displayed to the user through List Control
 	*/
 	CListCtrl m_cDebugEvents;
 
@@ -18,10 +19,14 @@ public:
 	afx_msg void OnBnClicked_StartDebugging();
 	
 	/*
+	Main debugger loop. Listenes and handles debug events.
+	Controls execution of the debugee. Method executed on a separate thread.
 	*/
 	void DebuggerThreadProc();
 
 	/*
+	Handles custom DEBUG_EVENT_MESSAGE (sent by DebuggerThreadProc()).
+	Updates `m_cDebugEvents`.
 	*/
 	LRESULT OnDebugEventMessage(WPARAM wParam, LPARAM lParam);
 	
@@ -42,11 +47,10 @@ protected:
 
 private:
 	/*
-	Full path to the executable to debug.
+	Full path to the executable to debug
 	*/
 	CString DebugProcessName;
 
-	// TODO init to 0
 	int TotalEventsCount;
 	int ThreadCount;
 	int DLLCount;
@@ -64,6 +68,7 @@ private:
 		const PROCESS_INFORMATION& processInfo) const;
 
 	/*
+	Used by `DebuggerThreadProc()`. Takes OUT arguments.
 	*/
 	void ProcessExceptionDebugEvent(
 		const DEBUG_EVENT& debugEvent, 
