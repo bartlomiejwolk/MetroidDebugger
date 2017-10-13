@@ -334,15 +334,18 @@ CString CMetroidDebuggerDlg::GetDebugStringFromDebugEvent(
 		debugStringInfo.nDebugStringLength,
 		NULL);
 
+	CString debugString;
 	if (debugStringInfo.fUnicode)
 	{
-		return msg;
+		debugString = msg;
 	}
 	else
 	{
-		return (LPSTR)msg;
+		debugString = (LPSTR)msg;
 	}
 	delete[] msg;		
+
+	return debugString;
 }
 
 void CMetroidDebuggerDlg::ProcessExceptionDebugEvent(
