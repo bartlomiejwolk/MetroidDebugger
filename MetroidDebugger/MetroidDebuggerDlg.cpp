@@ -64,6 +64,7 @@ void CMetroidDebuggerDlg::OnBnClicked_StartDebugging()
 
 void CMetroidDebuggerDlg::DebuggerThreadProc()
 {
+	// TODO extract
 	// Create process to debug
 	PROCESS_INFORMATION processInfo;
 	{
@@ -87,13 +88,13 @@ void CMetroidDebuggerDlg::DebuggerThreadProc()
 	}
 
 	// Main debugger loop
-	DEBUG_EVENT debugEvent = {};
-	// message displayed to the user
-	CString eventMessage;
-	// next debugger action
-	DWORD continueStatus = DBG_CONTINUE;
 	{
-		// used to report about unloaded DLLs
+		DEBUG_EVENT debugEvent = {};
+		// message displayed to the user
+		CString eventMessage;
+		// used by `ContinueDebugEvent()` in case of exception
+		DWORD continueStatus = DBG_CONTINUE;
+		// DLL info cache, used to report about unloaded DLLs
 		std::map<LPVOID, CString> DLLNameMap;
 
 		bool continueDebugging = true;
@@ -105,6 +106,7 @@ void CMetroidDebuggerDlg::DebuggerThreadProc()
 				return;
 			}
 
+			// TODO extract switch to method
 			// Handle debug event
 			switch (debugEvent.dwDebugEventCode)
 			{

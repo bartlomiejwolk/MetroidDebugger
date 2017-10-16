@@ -19,8 +19,9 @@ public:
 	afx_msg void OnBnClicked_StartDebugging();
 	
 	/*
-	Main debugger loop. Listenes and handles debug events.
-	Controls execution of the debugee. Method executed on a separate thread.
+	Creates process to debug, listenes and handles debug events
+	and controls execution of the debugee. 
+	Method executed on a separate thread.
 	*/
 	void DebuggerThreadProc();
 
