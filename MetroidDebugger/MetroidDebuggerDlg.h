@@ -1,5 +1,6 @@
 #pragma once
 #include <afxcmn.h>
+#include <map>
 
 class CMetroidDebuggerDlg : public CDialog
 {
@@ -24,6 +25,16 @@ public:
 	Method executed on a separate thread.
 	*/
 	void DebuggerThreadProc();
+
+	/*
+	*/
+	void HandleDebugEvents(
+		const DEBUG_EVENT &debugEvent, 
+		const PROCESS_INFORMATION& processInfo, 
+		CString &eventMessage, 
+		bool& continueDebugging, 
+		std::map<LPVOID, CString>& DLLNameMap, 
+		DWORD& continueStatus);
 
 	/*
 	Creates process to debug specified by `DebugProcessaName` field.

@@ -64,80 +64,86 @@ void CMetroidDebuggerDlg::OnBnClicked_StartDebugging()
 
 void CMetroidDebuggerDlg::DebuggerThreadProc()
 {
+	// debug event data from the OS
+	DEBUG_EVENT debugEvent = {};
+	// message displayed to the user
+	CString eventMessage;
+	// used by `ContinueDebugEvent()` in case of exception
+	DWORD continueStatus = DBG_CONTINUE;
+	// DLL info cache, used to report about unloaded DLLs
+	std::map<LPVOID, CString> DLLNameMap;
+
 	PROCESS_INFORMATION processInfo = CreateDebugProcess();
-
-	// Main debugger loop
+	bool continueDebugging = true;
+	while (continueDebugging)
 	{
-		DEBUG_EVENT debugEvent = {};
-		// message displayed to the user
-		CString eventMessage;
-		// used by `ContinueDebugEvent()` in case of exception
-		DWORD continueStatus = DBG_CONTINUE;
-		// DLL info cache, used to report about unloaded DLLs
-		std::map<LPVOID, CString> DLLNameMap;
-
-		bool continueDebugging = true;
-		while (continueDebugging)
-		{
-			// Return if there's no debug event to process
-			if (!WaitForDebugEvent(&debugEvent, INFINITE))
-			{
-				return;
-			}
-
-			// TODO extract switch to method
-			// Handle debug event
-			switch (debugEvent.dwDebugEventCode)
-			{
-			case CREATE_PROCESS_DEBUG_EVENT:
-				eventMessage = GetFileNameFromHandle(debugEvent.u.CreateProcessInfo.hFile);
-				break;
-
-			case CREATE_THREAD_DEBUG_EVENT:
-				eventMessage.Format(
-					L"Thread 0x%x (Id. %d) created at: 0x%x",
-					debugEvent.u.CreateThread.hThread,
-					debugEvent.dwThreadId,
-					debugEvent.u.CreateThread.lpStartAddress);
-				break;
-
-			case EXIT_THREAD_DEBUG_EVENT:
-				eventMessage.Format(
-					L"Thread %d exited with code: %d",
-					debugEvent.dwThreadId,
-					debugEvent.u.ExitThread.dwExitCode);
-				break;
-
-			case EXIT_PROCESS_DEBUG_EVENT:
-				eventMessage.Format(L"0x%x", debugEvent.u.ExitProcess.dwExitCode);
-				continueDebugging = false;
-				break;
-
-			case LOAD_DLL_DEBUG_EVENT:
-				eventMessage = GetFileNameFromHandle(debugEvent.u.LoadDll.hFile);
-				DLLNameMap.insert(std::make_pair(debugEvent.u.LoadDll.lpBaseOfDll, eventMessage));
-				eventMessage.AppendFormat(L" %x", debugEvent.u.LoadDll.lpBaseOfDll);
-				break;
-
-			case UNLOAD_DLL_DEBUG_EVENT:
-				eventMessage.Format(L"%s", DLLNameMap[debugEvent.u.UnloadDll.lpBaseOfDll]);
-				break;
-
-			case OUTPUT_DEBUG_STRING_EVENT:
-				eventMessage = GetDebugStringFromDebugEvent(debugEvent, processInfo);
-				break;
-
-			case EXCEPTION_DEBUG_EVENT:
-				// takes OUT args
-				ProcessExceptionDebugEvent(debugEvent, eventMessage, continueStatus);
-				break;
-			}
-
-			SendMessage(DEBUG_EVENT_MESSAGE, (WPARAM)&eventMessage, debugEvent.dwDebugEventCode);
-			ContinueDebugEvent(debugEvent.dwProcessId, debugEvent.dwThreadId, continueStatus);
-			continueStatus = DBG_CONTINUE;
-		}
+		WaitForDebugEvent(&debugEvent, INFINITE);
+		HandleDebugEvents(
+			debugEvent, 
+			processInfo, 
+			eventMessage, 
+			continueDebugging, 
+			DLLNameMap, 
+			continueStatus);
+		SendMessage(DEBUG_EVENT_MESSAGE, (WPARAM)&eventMessage, debugEvent.dwDebugEventCode);
+		ContinueDebugEvent(debugEvent.dwProcessId, debugEvent.dwThreadId, continueStatus);
+		continueStatus = DBG_CONTINUE;
 	}
+}
+
+void CMetroidDebuggerDlg::HandleDebugEvents(
+	const DEBUG_EVENT &debugEvent, 
+	const PROCESS_INFORMATION& processInfo, 
+	CString &eventMessage, 
+	bool& continueDebugging, 
+	std::map<LPVOID, CString>& DLLNameMap, 
+	DWORD& continueStatus)
+{
+	switch (debugEvent.dwDebugEventCode)
+	{
+	case CREATE_PROCESS_DEBUG_EVENT:
+		eventMessage = GetFileNameFromHandle(debugEvent.u.CreateProcessInfo.hFile);
+		break;
+
+	case CREATE_THREAD_DEBUG_EVENT:
+		eventMessage.Format(
+			L"Thread 0x%x (Id. %d) created at: 0x%x",
+			debugEvent.u.CreateThread.hThread,
+			debugEvent.dwThreadId,
+			debugEvent.u.CreateThread.lpStartAddress);
+		break;
+
+	case EXIT_THREAD_DEBUG_EVENT:
+		eventMessage.Format(
+			L"Thread %d exited with code: %d",
+			debugEvent.dwThreadId,
+			debugEvent.u.ExitThread.dwExitCode);
+		break;
+
+	case EXIT_PROCESS_DEBUG_EVENT:
+		eventMessage.Format(L"0x%x", debugEvent.u.ExitProcess.dwExitCode);
+		continueDebugging = false;
+		break;
+
+	case LOAD_DLL_DEBUG_EVENT:
+		eventMessage = GetFileNameFromHandle(debugEvent.u.LoadDll.hFile);
+		DLLNameMap.insert(std::make_pair(debugEvent.u.LoadDll.lpBaseOfDll, eventMessage));
+		eventMessage.AppendFormat(L" %x", debugEvent.u.LoadDll.lpBaseOfDll);
+		break;
+
+	case UNLOAD_DLL_DEBUG_EVENT:
+		eventMessage.Format(L"%s", DLLNameMap[debugEvent.u.UnloadDll.lpBaseOfDll]);
+		break;
+
+	case OUTPUT_DEBUG_STRING_EVENT:
+		eventMessage = GetDebugStringFromDebugEvent(debugEvent, processInfo);
+		break;
+
+	case EXCEPTION_DEBUG_EVENT:
+		// takes OUT args
+		ProcessExceptionDebugEvent(debugEvent, eventMessage, continueStatus);
+		break;
+	}			
 }
 
 PROCESS_INFORMATION CMetroidDebuggerDlg::CreateDebugProcess() const
