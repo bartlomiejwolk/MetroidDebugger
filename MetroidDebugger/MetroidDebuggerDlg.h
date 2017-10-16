@@ -26,6 +26,11 @@ public:
 	void DebuggerThreadProc();
 
 	/*
+	Creates process to debug specified by `DebugProcessaName` field.
+	*/
+	PROCESS_INFORMATION CreateDebugProcess() const;
+
+	/*
 	Handles custom DEBUG_EVENT_MESSAGE (sent by DebuggerThreadProc()).
 	Updates `m_cDebugEvents`.
 	*/

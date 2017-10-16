@@ -64,28 +64,7 @@ void CMetroidDebuggerDlg::OnBnClicked_StartDebugging()
 
 void CMetroidDebuggerDlg::DebuggerThreadProc()
 {
-	// TODO extract
-	// Create process to debug
-	PROCESS_INFORMATION processInfo;
-	{
-		STARTUPINFO startupInfo;
-		
-		ZeroMemory(&startupInfo, sizeof(startupInfo));
-		startupInfo.cb = sizeof(startupInfo);
-		ZeroMemory(&processInfo, sizeof(processInfo));
-
-		CreateProcess(
-			DebugProcessName,
-			NULL,
-			NULL,
-			NULL,
-			false,
-			DEBUG_ONLY_THIS_PROCESS,
-			NULL,
-			NULL,
-			&startupInfo,
-			&processInfo);
-	}
+	PROCESS_INFORMATION processInfo = CreateDebugProcess();
 
 	// Main debugger loop
 	{
@@ -159,6 +138,30 @@ void CMetroidDebuggerDlg::DebuggerThreadProc()
 			continueStatus = DBG_CONTINUE;
 		}
 	}
+}
+
+PROCESS_INFORMATION CMetroidDebuggerDlg::CreateDebugProcess() const
+{
+	STARTUPINFO startupInfo;
+	PROCESS_INFORMATION processInfo;
+
+	ZeroMemory(&startupInfo, sizeof(startupInfo));
+	startupInfo.cb = sizeof(startupInfo);
+	ZeroMemory(&processInfo, sizeof(processInfo));
+
+	CreateProcess(
+		DebugProcessName,
+		NULL,
+		NULL,
+		NULL,
+		false,
+		DEBUG_ONLY_THIS_PROCESS,
+		NULL,
+		NULL,
+		&startupInfo,
+		&processInfo);
+
+	return processInfo;
 }
 
 LRESULT CMetroidDebuggerDlg::OnDebugEventMessage(WPARAM wParam, LPARAM lParam)
