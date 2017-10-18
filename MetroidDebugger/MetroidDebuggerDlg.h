@@ -1,5 +1,6 @@
 #pragma once
 #include <afxcmn.h>
+#include <map>
 
 class CMetroidDebuggerDlg : public CDialog
 {
@@ -74,13 +75,4 @@ private:
 	CString GetDebugStringFromDebugEvent(
 		const DEBUG_EVENT& debugEvent, 
 		const PROCESS_INFORMATION& processInfo) const;
-
-	/*
-	Used by `DebuggerThreadProc()`. Takes OUT arguments.
-	*/
-	void ProcessExceptionDebugEvent(
-		const DEBUG_EVENT& debugEvent, 
-		CString& eventMessage, 
-		DWORD& continueStatus) const;
-
 };

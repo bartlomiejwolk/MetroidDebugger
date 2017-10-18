@@ -64,12 +64,11 @@ void CMetroidDebuggerDlg::OnBnClicked_StartDebugging()
 
 void CMetroidDebuggerDlg::DebuggerThreadProc()
 {
-	// TODO extract
 	// Create process to debug
 	PROCESS_INFORMATION processInfo;
 	{
 		STARTUPINFO startupInfo;
-		
+
 		ZeroMemory(&startupInfo, sizeof(startupInfo));
 		startupInfo.cb = sizeof(startupInfo);
 		ZeroMemory(&processInfo, sizeof(processInfo));
@@ -87,8 +86,9 @@ void CMetroidDebuggerDlg::DebuggerThreadProc()
 			&processInfo);
 	}
 
-	// Main debugger loop
+	// Debugger loop
 	{
+		// debug event data from the OS
 		DEBUG_EVENT debugEvent = {};
 		// message displayed to the user
 		CString eventMessage;
@@ -100,14 +100,8 @@ void CMetroidDebuggerDlg::DebuggerThreadProc()
 		bool continueDebugging = true;
 		while (continueDebugging)
 		{
-			// Return if there's no debug event to process
-			if (!WaitForDebugEvent(&debugEvent, INFINITE))
-			{
-				return;
-			}
+			WaitForDebugEvent(&debugEvent, INFINITE);
 
-			// TODO extract switch to method
-			// Handle debug event
 			switch (debugEvent.dwDebugEventCode)
 			{
 			case CREATE_PROCESS_DEBUG_EVENT:
@@ -149,8 +143,23 @@ void CMetroidDebuggerDlg::DebuggerThreadProc()
 				break;
 
 			case EXCEPTION_DEBUG_EVENT:
-				// takes OUT args
-				ProcessExceptionDebugEvent(debugEvent, eventMessage, continueStatus);
+				const EXCEPTION_DEBUG_INFO& exceptionInfo = debugEvent.u.Exception;
+				switch (exceptionInfo.ExceptionRecord.ExceptionCode)
+				{
+				case STATUS_BREAKPOINT:
+					eventMessage = "Break point";
+					break;
+
+				default:
+					if (exceptionInfo.dwFirstChance == 1)
+					{
+						eventMessage.Format(
+							L"First chance exception at %x, exception code: 0x%08x",
+							exceptionInfo.ExceptionRecord.ExceptionAddress,
+							exceptionInfo.ExceptionRecord.ExceptionCode);
+					}
+					continueStatus = DBG_EXCEPTION_NOT_HANDLED;
+				}
 				break;
 			}
 
@@ -370,28 +379,4 @@ CString CMetroidDebuggerDlg::GetDebugStringFromDebugEvent(
 	delete[] msg;		
 
 	return debugString;
-}
-
-void CMetroidDebuggerDlg::ProcessExceptionDebugEvent(
-	const DEBUG_EVENT &debugEvent, 
-	CString &eventMessage, 
-	DWORD& continueStatus) const
-{
-	const EXCEPTION_DEBUG_INFO& exceptionInfo = debugEvent.u.Exception;
-	switch (exceptionInfo.ExceptionRecord.ExceptionCode)
-	{
-	case STATUS_BREAKPOINT:
-		eventMessage = "Break point";
-		break;
-
-	default:
-		if (exceptionInfo.dwFirstChance == 1)
-		{
-			eventMessage.Format(
-				L"First chance exception at %x, exception code: 0x%08x",
-				exceptionInfo.ExceptionRecord.ExceptionAddress,
-				exceptionInfo.ExceptionRecord.ExceptionCode);
-		}
-		continueStatus = DBG_EXCEPTION_NOT_HANDLED;
-	}		
 }
