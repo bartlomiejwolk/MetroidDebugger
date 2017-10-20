@@ -10,7 +10,7 @@ public:
 	/*
 	Contains debug messages displayed to the user through List Control
 	*/
-	CListCtrl m_cDebugEvents;
+	CListCtrl DebugEvents;
 
 	CMetroidDebuggerDlg(CWnd* pParent = NULL);   // standard constructor
 	virtual ~CMetroidDebuggerDlg();

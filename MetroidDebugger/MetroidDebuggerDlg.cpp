@@ -172,42 +172,42 @@ void CMetroidDebuggerDlg::DebuggerThreadProc()
 
 LRESULT CMetroidDebuggerDlg::OnDebugEventMessage(WPARAM wParam, LPARAM lParam)
 {
-	CString* pMessage = (CString*)wParam;
+	CString* message = (CString*)wParam;
 	switch (lParam)
 	{
 	case CREATE_PROCESS_DEBUG_EVENT:
-		m_cDebugEvents.InsertItem(TotalEventsCount, L"Process started: " + *pMessage);
+		DebugEvents.InsertItem(TotalEventsCount, L"Process started: " + *message);
 		break;
 	case CREATE_THREAD_DEBUG_EVENT:
-		m_cDebugEvents.InsertItem(TotalEventsCount, *pMessage);
+		DebugEvents.InsertItem(TotalEventsCount, *message);
 		ThreadCount++;
 		break;
 	case EXIT_THREAD_DEBUG_EVENT:
-		m_cDebugEvents.InsertItem(TotalEventsCount, *pMessage);
+		DebugEvents.InsertItem(TotalEventsCount, *message);
 		ThreadCount--;
 		break;
 	case EXIT_PROCESS_DEBUG_EVENT:
-		m_cDebugEvents.InsertItem(TotalEventsCount, L"Process exited with code: " + *pMessage);
+		DebugEvents.InsertItem(TotalEventsCount, L"Process exited with code: " + *message);
 		break;
 	case LOAD_DLL_DEBUG_EVENT:
-		m_cDebugEvents.InsertItem(TotalEventsCount, L"DLL loaded: " + *pMessage);
+		DebugEvents.InsertItem(TotalEventsCount, L"DLL loaded: " + *message);
 		DLLCount++;
 		break;
 	case UNLOAD_DLL_DEBUG_EVENT:
-		m_cDebugEvents.InsertItem(TotalEventsCount, L"DLL Unloaded: " + *pMessage);
+		DebugEvents.InsertItem(TotalEventsCount, L"DLL Unloaded: " + *message);
 		break;
 	case OUTPUT_DEBUG_STRING_EVENT:
-		m_cDebugEvents.InsertItem(TotalEventsCount, L"Debug Message: " + *pMessage);
+		DebugEvents.InsertItem(TotalEventsCount, L"Debug Message: " + *message);
 		OutputDebugStringCount++;
 		break;
 	case EXCEPTION_DEBUG_EVENT:
-		m_cDebugEvents.InsertItem(TotalEventsCount, L"Debug Exception: " + *pMessage);
+		DebugEvents.InsertItem(TotalEventsCount, L"Debug Exception: " + *message);
 		ExceptionCount++;
 		break;
 	}
 
 	TotalEventsCount++;
-	m_cDebugEvents.EnsureVisible(TotalEventsCount, false);
+	DebugEvents.EnsureVisible(TotalEventsCount, false);
 	CString label;
 
 	label.Format(L"Total Debugging events: %d", TotalEventsCount);
@@ -239,8 +239,8 @@ BOOL CMetroidDebuggerDlg::OnInitDialog()
 {
 	CDialog::OnInitDialog();
 
-	m_cDebugEvents.InsertColumn(0, L"Debug Event", LVCFMT_LEFT, 640);
-	m_cDebugEvents.SetExtendedStyle(m_cDebugEvents.GetExtendedStyle() | LVS_EX_GRIDLINES | LVS_EX_FULLROWSELECT);
+	DebugEvents.InsertColumn(0, L"Debug Event", LVCFMT_LEFT, 640);
+	DebugEvents.SetExtendedStyle(DebugEvents.GetExtendedStyle() | LVS_EX_GRIDLINES | LVS_EX_FULLROWSELECT);
 
 	return TRUE;
 }
@@ -248,7 +248,7 @@ BOOL CMetroidDebuggerDlg::OnInitDialog()
 void CMetroidDebuggerDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialog::DoDataExchange(pDX);
-	DDX_Control(pDX, IDC_DEBUG_EVENTS, m_cDebugEvents);
+	DDX_Control(pDX, IDC_DEBUG_EVENTS, DebugEvents);
 	DDX_Control(pDX, IDC_TOTAL_EVENTS, TotalEventsControl);
 	DDX_Control(pDX, IDC_THREAD_COUNT, ThreadCountControl);
 	DDX_Control(pDX, IDC_DLL_COUNT, DLLCountControl);
