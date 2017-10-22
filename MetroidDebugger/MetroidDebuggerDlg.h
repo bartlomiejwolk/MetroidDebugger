@@ -57,6 +57,10 @@ private:
 	CString DebugProcessName;
 
 	/*
+	*/
+	HANDLE DebugThread;
+
+	/*
 	True as long as the debug process runs.
 	*/
 	bool IsDebugging;

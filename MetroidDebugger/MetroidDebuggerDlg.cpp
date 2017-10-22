@@ -39,7 +39,19 @@ CMetroidDebuggerDlg::~CMetroidDebuggerDlg()
 
 void CMetroidDebuggerDlg::OnBnClicked_StartDebugging()
 {
-	// TODO Terminate thread if is debugging
+	if (IsDebugging)
+	{
+		TerminateThread(DebugThread, 0xDEAD);
+		// TODO terminate also the debugee
+		
+		DebugEvents.InsertItem(TotalEventsCount, _T("*** Debugging terminated by the user ***"));
+		DebugEvents.EnsureVisible(TotalEventsCount, false);
+
+		IsDebugging = false;
+		SetDebuggingModeUI();
+
+		return;
+	}
 
 	ResetDebuggerInfo();
 
@@ -52,14 +64,15 @@ void CMetroidDebuggerDlg::OnBnClicked_StartDebugging()
 
 	// Create debug thread
 	DebugProcessName = fileDialog.GetPathName();
-	HANDLE debugThread = CreateThread(0, 0, DebuggerThread, this, 0, 0);
-	if (debugThread == NULL)
+	DebugThread = CreateThread(0, 0, DebuggerThread, this, 0, 0);
+	if (DebugThread == NULL)
 	{
 		AfxMessageBox(_T("Failed to start debugging!"));
 		return;
 	}
 
 	IsDebugging = true;
+	SetDebuggingModeUI();
 }
 
 void CMetroidDebuggerDlg::DebuggerThreadProc()
@@ -244,6 +257,8 @@ BOOL CMetroidDebuggerDlg::OnInitDialog()
 	DebugEvents.InsertColumn(0, L"Debug Event", LVCFMT_LEFT, 640);
 	DebugEvents.SetExtendedStyle(DebugEvents.GetExtendedStyle() | LVS_EX_GRIDLINES | LVS_EX_FULLROWSELECT);
 
+	SetDebuggingModeUI();
+
 	return TRUE;
 }
 
@@ -394,11 +409,11 @@ void CMetroidDebuggerDlg::SetDebuggingModeUI()
 	CWnd* startButton = GetDlgItem(IDC_START_DEBUG);
 	if (IsDebugging)
 	{
-		startButton->SetWindowText(_T("&Start Debugging"));
+		startButton->SetWindowText(_T("&Stop Debugging"));
 	}
 	else
 	{
-		startButton->SetWindowText(_T("&Stop Debugging"));
+		startButton->SetWindowText(_T("&Start Debugging"));
 	}
 }
 
