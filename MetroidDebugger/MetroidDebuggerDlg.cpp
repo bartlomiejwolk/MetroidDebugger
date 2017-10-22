@@ -29,6 +29,8 @@ DWORD WINAPI DebuggerThread(void* param)
 CMetroidDebuggerDlg::CMetroidDebuggerDlg(CWnd* pParent /*=NULL*/)
 	: CDialog(IDD_METROIDDEBUGGER_DIALOG, pParent)
 {
+	ResetDebuggerInfo();
+	IsDebugging = false;
 }
 
 CMetroidDebuggerDlg::~CMetroidDebuggerDlg()
@@ -39,12 +41,7 @@ void CMetroidDebuggerDlg::OnBnClicked_StartDebugging()
 {
 	// TODO Terminate thread if is debugging
 
-	// Init fields
-	TotalEventsCount = 0;
-	ThreadCount = 1;
-	DLLCount = 0;
-	OutputDebugStringCount = 0;
-	ExceptionCount = 0;
+	ResetDebuggerInfo();
 
 	// Get executable to debug
 	CFileDialog fileDialog(true, L"EXE", NULL, 6, L"Executables|*.exe||");
@@ -59,7 +56,10 @@ void CMetroidDebuggerDlg::OnBnClicked_StartDebugging()
 	if (debugThread == NULL)
 	{
 		AfxMessageBox(_T("Failed to start debugging!"));
+		return;
 	}
+
+	IsDebugging = true;
 }
 
 void CMetroidDebuggerDlg::DebuggerThreadProc()
@@ -126,6 +126,7 @@ void CMetroidDebuggerDlg::DebuggerThreadProc()
 			case EXIT_PROCESS_DEBUG_EVENT:
 				eventMessage.Format(L"0x%x", debugEvent.u.ExitProcess.dwExitCode);
 				continueDebugging = false;
+				IsDebugging = false;
 				break;
 
 			case LOAD_DLL_DEBUG_EVENT:
@@ -188,6 +189,7 @@ LRESULT CMetroidDebuggerDlg::OnDebugEventMessage(WPARAM wParam, LPARAM lParam)
 		break;
 	case EXIT_PROCESS_DEBUG_EVENT:
 		DebugEvents.InsertItem(TotalEventsCount, L"Process exited with code: " + *message);
+		SetDebuggingModeUI();
 		break;
 	case LOAD_DLL_DEBUG_EVENT:
 		DebugEvents.InsertItem(TotalEventsCount, L"DLL loaded: " + *message);
@@ -379,4 +381,32 @@ CString CMetroidDebuggerDlg::GetDebugStringFromDebugEvent(
 	delete[] msg;		
 
 	return debugString;
+}
+
+void CMetroidDebuggerDlg::SetDebuggingModeUI()
+{
+	ThreadCountControl.EnableWindow(IsDebugging);
+	DLLCountControl.EnableWindow(IsDebugging);
+	TotalEventsControl.EnableWindow(IsDebugging);
+	OutputDebugControl.EnableWindow(IsDebugging);
+	ExceptionCountControl.EnableWindow(IsDebugging);
+
+	CWnd* startButton = GetDlgItem(IDC_START_DEBUG);
+	if (IsDebugging)
+	{
+		startButton->SetWindowText(_T("&Start Debugging"));
+	}
+	else
+	{
+		startButton->SetWindowText(_T("&Stop Debugging"));
+	}
+}
+
+void CMetroidDebuggerDlg::ResetDebuggerInfo()
+{
+	TotalEventsCount = 0;
+	ThreadCount = 1;
+	DLLCount = 0;
+	OutputDebugStringCount = 0;
+	ExceptionCount = 0;
 }

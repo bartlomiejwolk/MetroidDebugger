@@ -13,6 +13,9 @@ public:
 	CListCtrl DebugEvents;
 
 	CMetroidDebuggerDlg(CWnd* pParent = NULL);   // standard constructor
+
+	void ResetDebuggerInfo();
+
 	virtual ~CMetroidDebuggerDlg();
 
 	/*
@@ -53,6 +56,11 @@ private:
 	*/
 	CString DebugProcessName;
 
+	/*
+	True as long as the debug process runs.
+	*/
+	bool IsDebugging;
+
 	int TotalEventsCount;
 	int ThreadCount;
 	int DLLCount;
@@ -75,4 +83,9 @@ private:
 	CString GetDebugStringFromDebugEvent(
 		const DEBUG_EVENT& debugEvent, 
 		const PROCESS_INFORMATION& processInfo) const;
+
+	/*
+	Updates UI properties.
+	*/
+	void SetDebuggingModeUI();
 };
