@@ -29,7 +29,7 @@ DWORD WINAPI DebuggerThread(void* param)
 CMetroidDebuggerDlg::CMetroidDebuggerDlg(CWnd* pParent /*=NULL*/)
 	: CDialog(IDD_METROIDDEBUGGER_DIALOG, pParent)
 {
-	ResetDebuggerInfo();
+	ResetDebuggerData();
 	IsDebugging = false;
 }
 
@@ -48,7 +48,7 @@ void CMetroidDebuggerDlg::OnBnClicked_StartDebugging()
 		DebugEvents.EnsureVisible(TotalEventsCount, false);
 
 		IsDebugging = false;
-		ResetDebuggerInfo();
+		ResetDebuggerData();
 		SetDebuggingModeUI();
 
 		return;
@@ -416,7 +416,7 @@ void CMetroidDebuggerDlg::SetDebuggingModeUI()
 	}
 }
 
-void CMetroidDebuggerDlg::ResetDebuggerInfo()
+void CMetroidDebuggerDlg::ResetDebuggerData()
 {
 	TotalEventsCount = 0;
 	ThreadCount = 1;

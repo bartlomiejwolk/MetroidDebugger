@@ -14,7 +14,7 @@ public:
 
 	CMetroidDebuggerDlg(CWnd* pParent = NULL);   // standard constructor
 
-	void ResetDebuggerInfo();
+	void ResetDebuggerData();
 
 	virtual ~CMetroidDebuggerDlg();
 
