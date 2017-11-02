@@ -48,11 +48,12 @@ void CMetroidDebuggerDlg::OnBnClicked_StartDebugging()
 		DebugEvents.EnsureVisible(TotalEventsCount, false);
 
 		IsDebugging = false;
-		ResetDebuggerData();
 		SetDebuggingModeUI();
 
 		return;
 	}
+
+	ResetDebuggerData();
 
 	// Get executable to debug
 	CFileDialog fileDialog(true, L"EXE", NULL, 6, L"Executables|*.exe||");

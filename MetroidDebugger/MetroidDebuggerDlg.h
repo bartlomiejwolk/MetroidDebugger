@@ -8,7 +8,7 @@ class CMetroidDebuggerDlg : public CDialog
 
 public:
 	/*
-	Contains debug messages displayed to the user through list control
+	Contains debug messages displayed to the user through List Control
 	*/
 	CListCtrl DebugEvents;
 
