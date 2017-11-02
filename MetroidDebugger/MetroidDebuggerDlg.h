@@ -14,18 +14,21 @@ public:
 
 	CMetroidDebuggerDlg(CWnd* pParent = NULL);   // standard constructor
 
+	/*
+	Resets data collected by the debugger during the debugging process.
+	*/
 	void ResetDebuggerData();
 
 	virtual ~CMetroidDebuggerDlg();
 
 	/*
+	Start debugging button handler.
 	*/
 	afx_msg void OnBnClicked_StartDebugging();
 	
 	/*
-	Creates process to debug, listenes and handles debug events
-	and controls execution of the debugee. 
-	Method executed on a separate thread.
+	Creates process to debug, listenes and handles debug events, controls 
+	execution of the debugee. Method executed on a separate thread.
 	*/
 	void DebuggerThreadProc();
 
@@ -71,7 +74,6 @@ private:
 	int OutputDebugStringCount;
 	int ExceptionCount;
 
-	// TODO rename
 	CStatic ThreadCountControl;
 	CStatic DLLCountControl;
 	CStatic TotalEventsControl;
