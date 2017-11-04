@@ -48,6 +48,8 @@ public:
 #endif
 
 protected:
+	HICON Icon;
+
 	virtual BOOL OnInitDialog();
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
 

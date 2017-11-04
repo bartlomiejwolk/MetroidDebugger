@@ -31,6 +31,8 @@ CMetroidDebuggerDlg::CMetroidDebuggerDlg(CWnd* pParent /*=NULL*/)
 {
 	ResetDebuggerData();
 	IsDebugging = false;
+	
+	Icon = AfxGetApp()->LoadIcon(IDI_MAINFRAME);
 }
 
 CMetroidDebuggerDlg::~CMetroidDebuggerDlg()
@@ -253,6 +255,9 @@ void CMetroidDebuggerDlg::OnLvnItemchangedDebugEvents(NMHDR *pNMHDR, LRESULT *pR
 BOOL CMetroidDebuggerDlg::OnInitDialog()
 {
 	CDialog::OnInitDialog();
+
+	SetIcon(Icon, TRUE);
+	SetIcon(Icon, FALSE);
 
 	DebugEvents.InsertColumn(0, L"Debug Event", LVCFMT_LEFT, 640);
 	DebugEvents.SetExtendedStyle(DebugEvents.GetExtendedStyle() | LVS_EX_GRIDLINES | LVS_EX_FULLROWSELECT);
