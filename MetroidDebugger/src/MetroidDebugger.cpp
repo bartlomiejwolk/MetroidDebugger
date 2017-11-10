@@ -1,5 +1,5 @@
 #include "MetroidDebugger.h"
-#include "../MetroidDebuggerDlg.h"
+#include "MetroidDebuggerDlg.h"
 
 CMetroidDebugger MetroidDebuggerApp;
 

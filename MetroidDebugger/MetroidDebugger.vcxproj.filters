@@ -18,13 +18,13 @@
     <ClInclude Include="src\MetroidDebugger.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\stdafx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\MetroidDebuggerDlg.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="resource.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="stdafx.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="MetroidDebuggerDlg.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -32,7 +32,7 @@
     <ClCompile Include="src\MetroidDebugger.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="MetroidDebuggerDlg.cpp">
+    <ClCompile Include="src\MetroidDebuggerDlg.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
