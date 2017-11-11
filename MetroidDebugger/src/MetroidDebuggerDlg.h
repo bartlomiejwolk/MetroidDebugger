@@ -71,12 +71,14 @@ private:
 	*/
 	bool IsDebugging;
 
+	/* Helper variables used to store debugger data. Used to populate text controls. */
 	int TotalEventsCount;
 	int ThreadCount;
 	int DLLCount;
 	int OutputDebugStringCount;
 	int ExceptionCount;
 
+	/* Text controls used to display debugger info to the user. */
 	CStatic ThreadCountControl;
 	CStatic DLLCountControl;
 	CStatic TotalEventsControl;
