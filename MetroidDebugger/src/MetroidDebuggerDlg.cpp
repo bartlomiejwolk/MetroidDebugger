@@ -7,9 +7,10 @@
 #include <map>
 #include "stdafx.h"
 #include "afxdialogex.h"
-#include "resource.h"
+#include "../resource.h"
 #include "Psapi.h"
 #include "MetroidDebuggerDlg.h"
+#include "AboutDlg.h"
 
 #define BUFSIZE 512
 
@@ -256,6 +257,22 @@ BOOL CMetroidDebuggerDlg::OnInitDialog()
 {
 	CDialog::OnInitDialog();
 
+	// IDM_ABOUTBOX must be in the system command range.
+	ASSERT((IDM_ABOUTBOX & 0xFFF0) == IDM_ABOUTBOX);
+	ASSERT(IDM_ABOUTBOX < 0xF000);
+
+	CMenu* sysMenu = GetSystemMenu(FALSE);
+	if (sysMenu != NULL)
+	{
+		CString strAboutMenu;
+		strAboutMenu.LoadString(IDS_ABOUTBOX);
+		if (!strAboutMenu.IsEmpty())
+		{
+			sysMenu->AppendMenu(MF_SEPARATOR);
+			sysMenu->AppendMenu(MF_STRING, IDM_ABOUTBOX, strAboutMenu);
+		}
+	}
+
 	SetIcon(Icon, TRUE);
 	SetIcon(Icon, FALSE);
 
@@ -278,8 +295,24 @@ void CMetroidDebuggerDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_EXCEPTION_COUNT, ExceptionCountControl);
 }
 
+void CMetroidDebuggerDlg::OnSysCommand(UINT nID, LPARAM lParam)
+{
+	if ((nID & 0xFFF0) == IDM_ABOUTBOX)
+	{
+		CAboutDlg dlgAbout;
+		dlgAbout.DoModal();
+	}
+	else
+	{
+		CDialog::OnSysCommand(nID, lParam);
+	}
+}
+
 
 BEGIN_MESSAGE_MAP(CMetroidDebuggerDlg, CDialog)
+	ON_WM_SYSCOMMAND()
+	ON_WM_PAINT()
+	ON_WM_QUERYDRAGICON()
 	ON_BN_CLICKED(IDC_START_DEBUG, &CMetroidDebuggerDlg::OnBnClicked_StartDebugging)
 	ON_MESSAGE(DEBUG_EVENT_MESSAGE, OnDebugEventMessage)
 	ON_NOTIFY(LVN_ITEMCHANGED, IDC_DEBUG_EVENTS, &CMetroidDebuggerDlg::OnLvnItemchangedDebugEvents)
