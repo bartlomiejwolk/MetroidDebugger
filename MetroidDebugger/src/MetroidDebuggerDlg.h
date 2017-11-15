@@ -1,6 +1,7 @@
 #pragma once
 #include <afxcmn.h>
 #include <map>
+#include "DebuggerImpl.h"
 
 class CMetroidDebuggerDlg : public CDialog
 {
@@ -57,6 +58,8 @@ protected:
 	DECLARE_MESSAGE_MAP()
 
 private:
+	DebuggerImpl DebuggerImpl;
+
 	/*
 	Full path to the executable to debug
 	*/

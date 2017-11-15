@@ -21,8 +21,11 @@ IMPLEMENT_DYNAMIC(CMetroidDebuggerDlg, CDialog)
 
 DWORD WINAPI DebuggerThread(void* param)
 {
-	CMetroidDebuggerDlg* thisDlg = static_cast<CMetroidDebuggerDlg*>(param);
-	thisDlg->DebuggerThreadProc();
+	/*CMetroidDebuggerDlg* thisDlg = static_cast<CMetroidDebuggerDlg*>(param);
+	thisDlg->DebuggerThreadProc();*/
+
+	DebuggerImpl* debuggerImpl = static_cast<DebuggerImpl*>(param);
+	debuggerImpl->DebuggerThreadProc();
 	
 	return 0;
 }
@@ -67,7 +70,7 @@ void CMetroidDebuggerDlg::OnBnClicked_StartDebugging()
 
 	// Create debug thread
 	DebugProcessName = fileDialog.GetPathName();
-	DebugThread = CreateThread(0, 0, DebuggerThread, this, 0, 0);
+	DebugThread = CreateThread(0, 0, DebuggerThread, &DebuggerImpl, 0, 0);
 	if (DebugThread == NULL)
 	{
 		AfxMessageBox(_T("Failed to start debugging!"));
