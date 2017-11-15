@@ -71,6 +71,11 @@ private:
 	*/
 	bool IsDebugging;
 
+	/*
+	True if the very first breakpoint sent by the OS on application start was hit.
+	*/
+	bool OsBreakpointHit;
+
 	/* Helper variables used to store debugger data. Used to populate text controls. */
 	int TotalEventsCount;
 	int ThreadCount;

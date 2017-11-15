@@ -78,6 +78,13 @@ void CMetroidDebuggerDlg::OnBnClicked_StartDebugging()
 	SetDebuggingModeUI();
 }
 
+static DWORD GetStartAddress(HANDLE hProcess, HANDLE hThread)
+{
+	// TODO implement
+	//(LPVOID)debugEvent.u.CreateProcessInfo.lpStartAddress;
+	return 0;
+}
+
 void CMetroidDebuggerDlg::DebuggerThreadProc()
 {
 	// Create process to debug
@@ -121,7 +128,21 @@ void CMetroidDebuggerDlg::DebuggerThreadProc()
 			switch (debugEvent.dwDebugEventCode)
 			{
 			case CREATE_PROCESS_DEBUG_EVENT:
-				eventMessage = GetFileNameFromHandle(debugEvent.u.CreateProcessInfo.hFile);
+				{
+					eventMessage = GetFileNameFromHandle(debugEvent.u.CreateProcessInfo.hFile);
+
+					// insert break point instruction at program start
+					{
+						DWORD dwStartAddress = GetStartAddress(processInfo.hProcess, processInfo.hThread);
+						BYTE cInstruction;
+						DWORD dwReadBytes;
+						ReadProcessMemory(processInfo.hProcess, (void*)dwStartAddress, &cInstruction, 1, &dwReadBytes);
+						BYTE originalInstruction = cInstruction;
+						cInstruction = 0xCC;
+						WriteProcessMemory(processInfo.hProcess, (void*)dwStartAddress, &cInstruction, 1, &dwReadBytes);
+						FlushInstructionCache(processInfo.hProcess, (void*)dwStartAddress, 1);
+					}
+				}
 				break;
 
 			case CREATE_THREAD_DEBUG_EVENT:
@@ -164,6 +185,20 @@ void CMetroidDebuggerDlg::DebuggerThreadProc()
 				switch (exceptionInfo.ExceptionRecord.ExceptionCode)
 				{
 				case STATUS_BREAKPOINT:
+					{
+					// breakpoint that was set by the debugger
+						if (OsBreakpointHit)
+						{
+							CONTEXT lcContext;
+							lcContext.ContextFlags = CONTEXT_ALL;
+							GetThreadContext(processInfo.hThread, &lcContext);
+						}
+						// First brakpoint sent by OS
+						else
+						{
+							OsBreakpointHit = true;
+						}
+					}
 					eventMessage = "Break point";
 					break;
 
