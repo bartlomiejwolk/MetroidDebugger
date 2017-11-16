@@ -58,13 +58,6 @@ protected:
 	DECLARE_MESSAGE_MAP()
 
 private:
-	DebuggerImpl DebuggerImpl;
-
-	/*
-	Full path to the executable to debug
-	*/
-	CString DebugProcessName;
-
 	/*
 	*/
 	HANDLE DebugThread;

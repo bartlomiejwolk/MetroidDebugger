@@ -11,6 +11,7 @@
 #include "Psapi.h"
 #include "MetroidDebuggerDlg.h"
 #include "AboutDlg.h"
+#include "DebuggerImpl.h"
 
 #define BUFSIZE 512
 
@@ -21,11 +22,12 @@ IMPLEMENT_DYNAMIC(CMetroidDebuggerDlg, CDialog)
 
 DWORD WINAPI DebuggerThread(void* param)
 {
-	/*CMetroidDebuggerDlg* thisDlg = static_cast<CMetroidDebuggerDlg*>(param);
-	thisDlg->DebuggerThreadProc();*/
+	wchar_t* path = static_cast<wchar_t*>(param);
 
-	DebuggerImpl* debuggerImpl = static_cast<DebuggerImpl*>(param);
-	debuggerImpl->DebuggerThreadProc();
+	DebuggerImpl debugger(path);
+	debugger.DebuggerThreadProc();
+	
+	delete(path);
 	
 	return 0;
 }
@@ -45,6 +47,7 @@ CMetroidDebuggerDlg::~CMetroidDebuggerDlg()
 
 void CMetroidDebuggerDlg::OnBnClicked_StartDebugging()
 {
+	// "Stop debugging" button pressed
 	if (IsDebugging)
 	{
 		TerminateThread(DebugThread, 0xDEAD);
@@ -60,21 +63,30 @@ void CMetroidDebuggerDlg::OnBnClicked_StartDebugging()
 	}
 
 	ResetDebuggerData();
-
-	// Get executable to debug
+	
+	/* Get path of the executable to debug */
 	CFileDialog fileDialog(true, L"EXE", NULL, 6, L"Executables|*.exe||");
 	if (fileDialog.DoModal() == IDCANCEL)
 	{
 		return;
 	}
+	CString path = fileDialog.GetPathName();
 
 	// Create debug thread
-	DebugProcessName = fileDialog.GetPathName();
-	DebugThread = CreateThread(0, 0, DebuggerThread, &DebuggerImpl, 0, 0);
-	if (DebugThread == NULL)
 	{
-		AfxMessageBox(_T("Failed to start debugging!"));
-		return;
+		/* Create copy of the path */
+		size_t pathLen = path.GetLength();
+		wchar_t* pathLenHeap = new wchar_t[pathLen + 1];
+		wcscpy_s(pathLenHeap, pathLen + 1, path.GetBuffer(pathLen));
+
+		/* Create thread*/
+		DebugThread = CreateThread(0, 0, DebuggerThread, pathLenHeap, 0, 0);
+		if (DebugThread == NULL)
+		{
+			delete(pathLenHeap);
+			AfxMessageBox(_T("Failed to start debugging!"));
+			return;
+		}
 	}
 
 	IsDebugging = true;
@@ -90,27 +102,7 @@ static DWORD GetStartAddress(HANDLE hProcess, HANDLE hThread)
 
 void CMetroidDebuggerDlg::DebuggerThreadProc()
 {
-	// Create process to debug
 	PROCESS_INFORMATION processInfo;
-	{
-		STARTUPINFO startupInfo;
-
-		ZeroMemory(&startupInfo, sizeof(startupInfo));
-		startupInfo.cb = sizeof(startupInfo);
-		ZeroMemory(&processInfo, sizeof(processInfo));
-
-		CreateProcess(
-			DebugProcessName,
-			NULL,
-			NULL,
-			NULL,
-			false,
-			DEBUG_ONLY_THIS_PROCESS,
-			NULL,
-			NULL,
-			&startupInfo,
-			&processInfo);
-	}
 
 	// Debugger loop
 	{
