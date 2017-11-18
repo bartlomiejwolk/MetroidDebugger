@@ -220,37 +220,40 @@ void CMetroidDebuggerDlg::DebuggerThreadProc()
 
 LRESULT CMetroidDebuggerDlg::OnDebugEventMessage(WPARAM wParam, LPARAM lParam)
 {
-	CString* message = (CString*)wParam;
+	/* Get event message from wParam */
+	std::string* messageStr ((std::string*)wParam);
+	CString message ((*messageStr).c_str());
+	
 	switch (lParam)
 	{
 	case CREATE_PROCESS_DEBUG_EVENT:
-		DebugEvents.InsertItem(TotalEventsCount, L"Process started: " + *message);
+		DebugEvents.InsertItem(TotalEventsCount, L"Process started: " + message);
 		break;
 	case CREATE_THREAD_DEBUG_EVENT:
-		DebugEvents.InsertItem(TotalEventsCount, *message);
+		DebugEvents.InsertItem(TotalEventsCount, message);
 		ThreadCount++;
 		break;
 	case EXIT_THREAD_DEBUG_EVENT:
-		DebugEvents.InsertItem(TotalEventsCount, *message);
+		DebugEvents.InsertItem(TotalEventsCount, message);
 		ThreadCount--;
 		break;
 	case EXIT_PROCESS_DEBUG_EVENT:
-		DebugEvents.InsertItem(TotalEventsCount, L"Process exited with code: " + *message);
+		DebugEvents.InsertItem(TotalEventsCount, L"Process exited with code: " + message);
 		SetDebuggingModeUI();
 		break;
 	case LOAD_DLL_DEBUG_EVENT:
-		DebugEvents.InsertItem(TotalEventsCount, L"DLL loaded: " + *message);
+		DebugEvents.InsertItem(TotalEventsCount, L"DLL loaded: " + message);
 		DLLCount++;
 		break;
 	case UNLOAD_DLL_DEBUG_EVENT:
-		DebugEvents.InsertItem(TotalEventsCount, L"DLL Unloaded: " + *message);
+		DebugEvents.InsertItem(TotalEventsCount, L"DLL Unloaded: " + message);
 		break;
 	case OUTPUT_DEBUG_STRING_EVENT:
-		DebugEvents.InsertItem(TotalEventsCount, L"Debug Message: " + *message);
+		DebugEvents.InsertItem(TotalEventsCount, L"Debug Message: " + message);
 		OutputDebugStringCount++;
 		break;
 	case EXCEPTION_DEBUG_EVENT:
-		DebugEvents.InsertItem(TotalEventsCount, L"Debug Exception: " + *message);
+		DebugEvents.InsertItem(TotalEventsCount, L"Debug Exception: " + message);
 		ExceptionCount++;
 		break;
 	}
