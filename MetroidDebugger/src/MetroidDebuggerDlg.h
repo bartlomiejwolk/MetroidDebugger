@@ -13,6 +13,9 @@ public:
 	*/
 	CListCtrl DebugEvents;
 
+	// TODO Make private. Create getter.
+	CString DebuggeePath;
+
 	CMetroidDebuggerDlg(CWnd* pParent = NULL);   // standard constructor
 
 	/*

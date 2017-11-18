@@ -22,12 +22,13 @@ DWORD WINAPI DebuggerThread(void* param)
 {
 	CMetroidDebuggerDlg* thisDlg = static_cast<CMetroidDebuggerDlg*>(param);
 	HWND thisDlgHandle = thisDlg->m_hWnd;
-	//wchar_t* path = static_cast<wchar_t*>(param);
 
-	DebuggerImpl debugger(NULL, thisDlgHandle);
-	debugger.DebuggerThreadProc();
+	// convert CString to pointer to string
+	wchar_t* debuggeePath = thisDlg->DebuggeePath.GetBuffer(thisDlg->DebuggeePath.GetLength());
 	
-	//delete(path);
+	/* Execute debugger loop */
+	DebuggerImpl debugger(debuggeePath, thisDlgHandle);
+	debugger.DebuggerThreadProc();
 	
 	return 0;
 }
@@ -70,12 +71,12 @@ void CMetroidDebuggerDlg::OnBnClicked_StartDebugging()
 	{
 		return;
 	}
-	CString path = fileDialog.GetPathName();
+	DebuggeePath = fileDialog.GetPathName();
 
 	// Create debug thread
 	{
 		/* Create copy of the path */
-		size_t pathLen = path.GetLength();
+		//size_t pathLen = DebuggeePath.GetLength();
 		/*wchar_t* pathHeap = new wchar_t[pathLen + 1];
 		wcscpy_s(pathHeap, pathLen + 1, path.GetBuffer(pathLen));*/
 
