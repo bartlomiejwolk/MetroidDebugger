@@ -9,25 +9,25 @@
 #include "afxdialogex.h"
 #include "../resource.h"
 #include "Psapi.h"
+#include "Defines.h"
 #include "MetroidDebuggerDlg.h"
 #include "AboutDlg.h"
 #include "DebuggerImpl.h"
 
 #define BUFSIZE 512
 
-// For thread messaging
-#define DEBUG_EVENT_MESSAGE		WM_APP + 0x100
-
 IMPLEMENT_DYNAMIC(CMetroidDebuggerDlg, CDialog)
 
 DWORD WINAPI DebuggerThread(void* param)
 {
-	wchar_t* path = static_cast<wchar_t*>(param);
+	CMetroidDebuggerDlg* thisDlg = static_cast<CMetroidDebuggerDlg*>(param);
+	HWND thisDlgHandle = thisDlg->m_hWnd;
+	//wchar_t* path = static_cast<wchar_t*>(param);
 
-	DebuggerImpl debugger(path);
+	DebuggerImpl debugger(NULL, thisDlgHandle);
 	debugger.DebuggerThreadProc();
 	
-	delete(path);
+	//delete(path);
 	
 	return 0;
 }
@@ -76,14 +76,14 @@ void CMetroidDebuggerDlg::OnBnClicked_StartDebugging()
 	{
 		/* Create copy of the path */
 		size_t pathLen = path.GetLength();
-		wchar_t* pathLenHeap = new wchar_t[pathLen + 1];
-		wcscpy_s(pathLenHeap, pathLen + 1, path.GetBuffer(pathLen));
+		/*wchar_t* pathHeap = new wchar_t[pathLen + 1];
+		wcscpy_s(pathHeap, pathLen + 1, path.GetBuffer(pathLen));*/
 
 		/* Create thread*/
-		DebugThread = CreateThread(0, 0, DebuggerThread, pathLenHeap, 0, 0);
+		DebugThread = CreateThread(0, 0, DebuggerThread, this, 0, 0);
 		if (DebugThread == NULL)
 		{
-			delete(pathLenHeap);
+			//delete(pathHeap);
 			AfxMessageBox(_T("Failed to start debugging!"));
 			return;
 		}
