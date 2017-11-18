@@ -14,10 +14,9 @@
 #include "AboutDlg.h"
 #include "DebuggerImpl.h"
 
-#define BUFSIZE 512
-
 IMPLEMENT_DYNAMIC(CMetroidDebuggerDlg, CDialog)
 
+// TODO Consider creating a namespace
 DWORD WINAPI DebuggerThread(void* param)
 {
 	CMetroidDebuggerDlg* thisDlg = static_cast<CMetroidDebuggerDlg*>(param);
@@ -94,13 +93,6 @@ void CMetroidDebuggerDlg::OnBnClicked_StartDebugging()
 	SetDebuggingModeUI();
 }
 
-static DWORD GetStartAddress(HANDLE hProcess, HANDLE hThread)
-{
-	// TODO implement
-	//(LPVOID)debugEvent.u.CreateProcessInfo.lpStartAddress;
-	return 0;
-}
-
 void CMetroidDebuggerDlg::DebuggerThreadProc()
 {
 	PROCESS_INFORMATION processInfo;
@@ -124,21 +116,7 @@ void CMetroidDebuggerDlg::DebuggerThreadProc()
 			switch (debugEvent.dwDebugEventCode)
 			{
 			case CREATE_PROCESS_DEBUG_EVENT:
-				{
-					eventMessage = GetFileNameFromHandle(debugEvent.u.CreateProcessInfo.hFile);
-
-					// insert break point instruction at program start
-					{
-						DWORD dwStartAddress = GetStartAddress(processInfo.hProcess, processInfo.hThread);
-						BYTE cInstruction;
-						DWORD dwReadBytes;
-						ReadProcessMemory(processInfo.hProcess, (void*)dwStartAddress, &cInstruction, 1, &dwReadBytes);
-						BYTE originalInstruction = cInstruction;
-						cInstruction = 0xCC;
-						WriteProcessMemory(processInfo.hProcess, (void*)dwStartAddress, &cInstruction, 1, &dwReadBytes);
-						FlushInstructionCache(processInfo.hProcess, (void*)dwStartAddress, 1);
-					}
-				}
+				
 				break;
 
 			case CREATE_THREAD_DEBUG_EVENT:
@@ -163,7 +141,7 @@ void CMetroidDebuggerDlg::DebuggerThreadProc()
 				break;
 
 			case LOAD_DLL_DEBUG_EVENT:
-				eventMessage = GetFileNameFromHandle(debugEvent.u.LoadDll.hFile);
+				eventMessage = /*GetFileNameFromHandle(debugEvent.u.LoadDll.hFile);*/ "";
 				DLLNameMap.insert(std::make_pair(debugEvent.u.LoadDll.lpBaseOfDll, eventMessage));
 				eventMessage.AppendFormat(L" %x", debugEvent.u.LoadDll.lpBaseOfDll);
 				break;
@@ -351,94 +329,6 @@ BEGIN_MESSAGE_MAP(CMetroidDebuggerDlg, CDialog)
 	ON_MESSAGE(DEBUG_EVENT_MESSAGE, OnDebugEventMessage)
 	ON_NOTIFY(LVN_ITEMCHANGED, IDC_DEBUG_EVENTS, &CMetroidDebuggerDlg::OnLvnItemchangedDebugEvents)
 END_MESSAGE_MAP()
-
-// This function is optimized!
-CString CMetroidDebuggerDlg::GetFileNameFromHandle(HANDLE hFile)
-{
-	BOOL bSuccess = FALSE;
-	TCHAR pszFilename[MAX_PATH + 1];
-	HANDLE hFileMap;
-
-	CString strFilename;
-
-	// Get the file size.
-	DWORD dwFileSizeHi = 0;
-	DWORD dwFileSizeLo = GetFileSize(hFile, &dwFileSizeHi);
-
-	if (dwFileSizeLo == 0 && dwFileSizeHi == 0)
-	{
-		return CString();
-	}
-
-	// Create a file mapping object.
-	hFileMap = CreateFileMapping(hFile,
-		NULL,
-		PAGE_READONLY,
-		0,
-		1,
-		NULL);
-
-	if (hFileMap)
-	{
-		// Create a file mapping to get the file name.
-		void* pMem = MapViewOfFile(hFileMap, FILE_MAP_READ, 0, 0, 1);
-
-		if (pMem)
-		{
-			if (GetMappedFileName(GetCurrentProcess(),
-				pMem,
-				pszFilename,
-				MAX_PATH))
-			{
-
-				// Translate path with device name to drive letters.
-				TCHAR szTemp[BUFSIZE];
-				szTemp[0] = '\0';
-
-				if (GetLogicalDriveStrings(BUFSIZE - 1, szTemp))
-				{
-					TCHAR szName[MAX_PATH];
-					TCHAR szDrive[3] = TEXT(" :");
-					BOOL bFound = FALSE;
-					TCHAR* p = szTemp;
-
-					do
-					{
-						// Copy the drive letter to the template string
-						*szDrive = *p;
-
-						// Look up each device name
-						if (QueryDosDevice(szDrive, szName, MAX_PATH))
-						{
-							size_t uNameLen = _tcslen(szName);
-
-							if (uNameLen < MAX_PATH)
-							{
-								bFound = _tcsnicmp(pszFilename, szName,
-									uNameLen) == 0;
-
-								if (bFound)
-								{
-									strFilename.Format(L"%s%s", szDrive, pszFilename + uNameLen);
-								}
-							}
-						}
-
-						// Go to the next NULL character.
-						while (*p++);
-					} while (!bFound && *p); // end of string
-				}
-			}
-			bSuccess = TRUE;
-			UnmapViewOfFile(pMem);
-		}
-
-		CloseHandle(hFileMap);
-	}
-
-	return(strFilename);
-}
-
 
 CString CMetroidDebuggerDlg::GetDebugStringFromDebugEvent(
 	const DEBUG_EVENT &debugEvent, 
