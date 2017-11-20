@@ -9,6 +9,33 @@
 #include <memory>
 #include <iosfwd>
 
+#include <stdarg.h>  // For va_start, etc.
+#include <memory>    // For std::unique_ptr
+#include <string.h>
+
+/*
+Source: https://stackoverflow.com/a/8098080/2964286
+*/
+static std::wstring WStringFormat(const std::wstring fmt_str, ...)
+{
+	int final_n, n = ((int)fmt_str.size()) * 2; /* Reserve two times as much as the length of the fmt_str */
+	std::unique_ptr<wchar_t[]> formatted;
+	va_list ap;
+	while (1)
+	{
+		formatted.reset(new wchar_t[n]); /* Wrap the plain char array into the unique_ptr */
+		wcscpy_s(&formatted[0], n, fmt_str.c_str());
+		va_start(ap, fmt_str);
+		final_n = vswprintf(&formatted[0], n, fmt_str.c_str(), ap);
+		va_end(ap);
+		if (final_n < 0 || final_n >= n)
+			n += abs(final_n - n + 1);
+		else
+			break;
+	}
+	return std::wstring(formatted.get());
+}
+
 #define BUFSIZE 512
 
 // TODO Consider creating a namespace
@@ -79,7 +106,7 @@ static std::wstring GetFileNameFromHandle(HANDLE hFile)
 
 								if (bFound)
 								{
-									// TODO guard against buffer overflow
+									// TODO check against buffer overflow
 									wchar_t buff[100];
 									swprintf_s(buff, L"%s%s", szDrive, pszFilename + uNameLen);
 									strFilename = buff;
@@ -176,6 +203,11 @@ void DebuggerImpl::DebuggerThreadProc()
 			break;
 
 			case CREATE_THREAD_DEBUG_EVENT:
+				eventMessage = WStringFormat(
+					L"Thread 0x%x (Id. %d) created at: 0x%x",
+					debugEvent.u.CreateThread.hThread,
+					debugEvent.dwThreadId,
+					debugEvent.u.CreateThread.lpStartAddress);
 				break;
 
 			case EXIT_THREAD_DEBUG_EVENT:
