@@ -107,10 +107,7 @@ static std::wstring GetFileNameFromHandle(HANDLE hFile)
 
 								if (bFound)
 								{
-									// TODO check against buffer overflow
-									wchar_t buff[100];
-									swprintf_s(buff, L"%s%s", szDrive, pszFilename + uNameLen);
-									strFilename = buff;
+									strFilename = WStringFormat(L"%s%s", szDrive, pszFilename + uNameLen);
 
 								}
 							}
