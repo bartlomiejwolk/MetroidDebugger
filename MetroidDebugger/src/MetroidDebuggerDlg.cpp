@@ -199,7 +199,7 @@ void CMetroidDebuggerDlg::DebuggerThreadProc()
 LRESULT CMetroidDebuggerDlg::OnDebugEventMessage(WPARAM wParam, LPARAM lParam)
 {
 	/* Get event message from wParam */
-	std::string* messageStr ((std::string*)wParam);
+	std::wstring* messageStr ((std::wstring*)wParam);
 	CString message ((*messageStr).c_str());
 	
 	switch (lParam)
