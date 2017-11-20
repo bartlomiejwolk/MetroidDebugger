@@ -12,6 +12,7 @@
 #include <stdarg.h>  // For va_start, etc.
 #include <memory>    // For std::unique_ptr
 #include <string.h>
+#include <utility>
 
 /*
 Source: https://stackoverflow.com/a/8098080/2964286
@@ -138,8 +139,38 @@ static DWORD GetStartAddress(HANDLE hProcess, HANDLE hThread)
 }
 
 DebuggerImpl::DebuggerImpl(LPCTSTR debugeePath, HWND dialogHandle)
-	: DebuggeePath(debugeePath), DialogHandle(dialogHandle)
+	: DebuggeePath(debugeePath), DialogHandle(dialogHandle), OsBreakpointHit(false)
 {
+}
+
+std::wstring DebuggerImpl::GetDebugStringFromDebugEvent(
+	const DEBUG_EVENT &debugEvent,
+	const PROCESS_INFORMATION &processInfo) const
+{
+	const OUTPUT_DEBUG_STRING_INFO& debugStringInfo = debugEvent.u.DebugString;
+
+	WCHAR* msg = new WCHAR[debugStringInfo.nDebugStringLength];
+	ZeroMemory(msg, debugStringInfo.nDebugStringLength);
+
+	ReadProcessMemory(
+		processInfo.hProcess,
+		debugStringInfo.lpDebugStringData,
+		msg,
+		debugStringInfo.nDebugStringLength,
+		NULL);
+
+	std::wstring debugString;
+	if (debugStringInfo.fUnicode)
+	{
+		debugString = msg;
+	}
+	else
+	{
+		debugString = (LPWSTR)msg;
+	}
+	delete[] msg;
+
+	return debugString;
 }
 
 void DebuggerImpl::DebuggerThreadProc()
@@ -175,7 +206,7 @@ void DebuggerImpl::DebuggerThreadProc()
 		// used by `ContinueDebugEvent()` in case of exception
 		DWORD continueStatus = DBG_CONTINUE;
 		// DLL info cache, used to report about unloaded DLLs
-		std::map<LPVOID, std::string> DLLNameMap;
+		std::map<LPVOID, std::wstring> DLLNameMap;
 
 		bool continueDebugging = true;
 		while (continueDebugging)
@@ -211,21 +242,63 @@ void DebuggerImpl::DebuggerThreadProc()
 				break;
 
 			case EXIT_THREAD_DEBUG_EVENT:
+				eventMessage = WStringFormat(
+					L"Thread %d exited with code: %d",
+					debugEvent.dwThreadId,
+					debugEvent.u.ExitThread.dwExitCode);
 				break;
 
 			case EXIT_PROCESS_DEBUG_EVENT:
+				eventMessage = WStringFormat(L"0x%x", debugEvent.u.ExitProcess.dwExitCode);
+				continueDebugging = false;
 				break;
 
 			case LOAD_DLL_DEBUG_EVENT:
+				eventMessage = GetFileNameFromHandle(debugEvent.u.LoadDll.hFile); "";
+				DLLNameMap.insert(std::make_pair(debugEvent.u.LoadDll.lpBaseOfDll, eventMessage));
+				eventMessage += WStringFormat(L" %x", debugEvent.u.LoadDll.lpBaseOfDll);
 				break;
 
 			case UNLOAD_DLL_DEBUG_EVENT:
+				eventMessage = WStringFormat(L"%s", DLLNameMap[debugEvent.u.UnloadDll.lpBaseOfDll]);
 				break;
 
 			case OUTPUT_DEBUG_STRING_EVENT:
+				eventMessage = GetDebugStringFromDebugEvent(debugEvent, processInfo);
 				break;
 
 			case EXCEPTION_DEBUG_EVENT:
+				const EXCEPTION_DEBUG_INFO& exceptionInfo = debugEvent.u.Exception;
+				switch (exceptionInfo.ExceptionRecord.ExceptionCode)
+				{
+				case STATUS_BREAKPOINT:
+				{
+					// breakpoint that was set by the debugger
+					if (OsBreakpointHit)
+					{
+						CONTEXT lcContext;
+						lcContext.ContextFlags = CONTEXT_ALL;
+						GetThreadContext(processInfo.hThread, &lcContext);
+					}
+					// First brakpoint sent by OS
+					else
+					{
+						OsBreakpointHit = true;
+					}
+				}
+				eventMessage = L"Break point";
+				break;
+
+				default:
+					if (exceptionInfo.dwFirstChance == 1)
+					{
+						eventMessage = WStringFormat(
+							L"First chance exception at %x, exception code: 0x%08x",
+							exceptionInfo.ExceptionRecord.ExceptionAddress,
+							exceptionInfo.ExceptionRecord.ExceptionCode);
+					}
+					continueStatus = DBG_EXCEPTION_NOT_HANDLED;
+				}
 				break;
 			}
 

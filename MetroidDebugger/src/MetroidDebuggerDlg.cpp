@@ -74,16 +74,9 @@ void CMetroidDebuggerDlg::OnBnClicked_StartDebugging()
 
 	// Create debug thread
 	{
-		/* Create copy of the path */
-		//size_t pathLen = DebuggeePath.GetLength();
-		/*wchar_t* pathHeap = new wchar_t[pathLen + 1];
-		wcscpy_s(pathHeap, pathLen + 1, path.GetBuffer(pathLen));*/
-
-		/* Create thread*/
 		DebugThread = CreateThread(0, 0, DebuggerThread, this, 0, 0);
 		if (DebugThread == NULL)
 		{
-			//delete(pathHeap);
 			AfxMessageBox(_T("Failed to start debugging!"));
 			return;
 		}
@@ -91,109 +84,6 @@ void CMetroidDebuggerDlg::OnBnClicked_StartDebugging()
 
 	IsDebugging = true;
 	SetDebuggingModeUI();
-}
-
-void CMetroidDebuggerDlg::DebuggerThreadProc()
-{
-	PROCESS_INFORMATION processInfo;
-
-	// Debugger loop
-	{
-		// debug event data from the OS
-		DEBUG_EVENT debugEvent = {};
-		// message displayed to the user
-		CString eventMessage;
-		// used by `ContinueDebugEvent()` in case of exception
-		DWORD continueStatus = DBG_CONTINUE;
-		// DLL info cache, used to report about unloaded DLLs
-		std::map<LPVOID, CString> DLLNameMap;
-
-		bool continueDebugging = true;
-		while (continueDebugging)
-		{
-			WaitForDebugEvent(&debugEvent, INFINITE);
-
-			switch (debugEvent.dwDebugEventCode)
-			{
-			case CREATE_PROCESS_DEBUG_EVENT:
-				
-				break;
-
-			case CREATE_THREAD_DEBUG_EVENT:
-				eventMessage.Format(
-					L"Thread 0x%x (Id. %d) created at: 0x%x",
-					debugEvent.u.CreateThread.hThread,
-					debugEvent.dwThreadId,
-					debugEvent.u.CreateThread.lpStartAddress);
-				break;
-
-			case EXIT_THREAD_DEBUG_EVENT:
-				eventMessage.Format(
-					L"Thread %d exited with code: %d",
-					debugEvent.dwThreadId,
-					debugEvent.u.ExitThread.dwExitCode);
-				break;
-
-			case EXIT_PROCESS_DEBUG_EVENT:
-				eventMessage.Format(L"0x%x", debugEvent.u.ExitProcess.dwExitCode);
-				continueDebugging = false;
-				IsDebugging = false;
-				break;
-
-			case LOAD_DLL_DEBUG_EVENT:
-				eventMessage = /*GetFileNameFromHandle(debugEvent.u.LoadDll.hFile);*/ "";
-				DLLNameMap.insert(std::make_pair(debugEvent.u.LoadDll.lpBaseOfDll, eventMessage));
-				eventMessage.AppendFormat(L" %x", debugEvent.u.LoadDll.lpBaseOfDll);
-				break;
-
-			case UNLOAD_DLL_DEBUG_EVENT:
-				eventMessage.Format(L"%s", DLLNameMap[debugEvent.u.UnloadDll.lpBaseOfDll]);
-				break;
-
-			case OUTPUT_DEBUG_STRING_EVENT:
-				eventMessage = GetDebugStringFromDebugEvent(debugEvent, processInfo);
-				break;
-
-			case EXCEPTION_DEBUG_EVENT:
-				const EXCEPTION_DEBUG_INFO& exceptionInfo = debugEvent.u.Exception;
-				switch (exceptionInfo.ExceptionRecord.ExceptionCode)
-				{
-				case STATUS_BREAKPOINT:
-					{
-					// breakpoint that was set by the debugger
-						if (OsBreakpointHit)
-						{
-							CONTEXT lcContext;
-							lcContext.ContextFlags = CONTEXT_ALL;
-							GetThreadContext(processInfo.hThread, &lcContext);
-						}
-						// First brakpoint sent by OS
-						else
-						{
-							OsBreakpointHit = true;
-						}
-					}
-					eventMessage = "Break point";
-					break;
-
-				default:
-					if (exceptionInfo.dwFirstChance == 1)
-					{
-						eventMessage.Format(
-							L"First chance exception at %x, exception code: 0x%08x",
-							exceptionInfo.ExceptionRecord.ExceptionAddress,
-							exceptionInfo.ExceptionRecord.ExceptionCode);
-					}
-					continueStatus = DBG_EXCEPTION_NOT_HANDLED;
-				}
-				break;
-			}
-
-			SendMessage(DEBUG_EVENT_MESSAGE, (WPARAM)&eventMessage, debugEvent.dwDebugEventCode);
-			ContinueDebugEvent(debugEvent.dwProcessId, debugEvent.dwThreadId, continueStatus);
-			continueStatus = DBG_CONTINUE;
-		}
-	}
 }
 
 LRESULT CMetroidDebuggerDlg::OnDebugEventMessage(WPARAM wParam, LPARAM lParam)
@@ -217,6 +107,7 @@ LRESULT CMetroidDebuggerDlg::OnDebugEventMessage(WPARAM wParam, LPARAM lParam)
 		break;
 	case EXIT_PROCESS_DEBUG_EVENT:
 		DebugEvents.InsertItem(TotalEventsCount, L"Process exited with code: " + message);
+		IsDebugging = false;
 		SetDebuggingModeUI();
 		break;
 	case LOAD_DLL_DEBUG_EVENT:
@@ -329,36 +220,6 @@ BEGIN_MESSAGE_MAP(CMetroidDebuggerDlg, CDialog)
 	ON_MESSAGE(DEBUG_EVENT_MESSAGE, OnDebugEventMessage)
 	ON_NOTIFY(LVN_ITEMCHANGED, IDC_DEBUG_EVENTS, &CMetroidDebuggerDlg::OnLvnItemchangedDebugEvents)
 END_MESSAGE_MAP()
-
-CString CMetroidDebuggerDlg::GetDebugStringFromDebugEvent(
-	const DEBUG_EVENT &debugEvent, 
-	const PROCESS_INFORMATION &processInfo) const
-{
-	const OUTPUT_DEBUG_STRING_INFO& debugStringInfo = debugEvent.u.DebugString;
-
-	WCHAR* msg = new WCHAR[debugStringInfo.nDebugStringLength];
-	ZeroMemory(msg, debugStringInfo.nDebugStringLength);
-
-	ReadProcessMemory(
-		processInfo.hProcess,
-		debugStringInfo.lpDebugStringData,
-		msg,
-		debugStringInfo.nDebugStringLength,
-		NULL);
-
-	CString debugString;
-	if (debugStringInfo.fUnicode)
-	{
-		debugString = msg;
-	}
-	else
-	{
-		debugString = (LPSTR)msg;
-	}
-	delete[] msg;		
-
-	return debugString;
-}
 
 void CMetroidDebuggerDlg::SetDebuggingModeUI()
 {

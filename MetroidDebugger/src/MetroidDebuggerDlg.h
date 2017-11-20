@@ -29,12 +29,6 @@ public:
 	Start debugging button handler.
 	*/
 	afx_msg void OnBnClicked_StartDebugging();
-	
-	/*
-	Creates process to debug, listenes and handles debug events, controls 
-	execution of the debugee. Method executed on a separate thread.
-	*/
-	void DebuggerThreadProc();
 
 	/*
 	Handles custom DEBUG_EVENT_MESSAGE (sent by DebuggerThreadProc()).
@@ -70,11 +64,6 @@ private:
 	*/
 	bool IsDebugging;
 
-	/*
-	True if the very first breakpoint sent by the OS on application start was hit.
-	*/
-	bool OsBreakpointHit;
-
 	/* Helper variables used to store debugger data. Used to populate text controls. */
 	int TotalEventsCount;
 	int ThreadCount;
@@ -90,17 +79,7 @@ private:
 	CStatic ExceptionCountControl;
 
 	/*
-	*/
-	CString GetFileNameFromHandle(HANDLE hFile);
-
-	/*
-	*/
-	CString GetDebugStringFromDebugEvent(
-		const DEBUG_EVENT& debugEvent, 
-		const PROCESS_INFORMATION& processInfo) const;
-
-	/*
-	Updates UI properties.
+	Updates UI properties according to debugger state.
 	*/
 	void SetDebuggingModeUI();
 };
