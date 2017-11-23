@@ -146,26 +146,35 @@ std::wstring DebuggerImpl::GetDebugStringFromDebugEvent(
 {
 	const OUTPUT_DEBUG_STRING_INFO& debugStringInfo = debugEvent.u.DebugString;
 
-	WCHAR* msg = new WCHAR[debugStringInfo.nDebugStringLength];
-	ZeroMemory(msg, debugStringInfo.nDebugStringLength);
-
+	/* Read debug message */
+	LPVOID* lpvMsg = new LPVOID[debugStringInfo.nDebugStringLength];
+	ZeroMemory(lpvMsg, debugStringInfo.nDebugStringLength);
 	ReadProcessMemory(
 		processInfo.hProcess,
 		debugStringInfo.lpDebugStringData,
-		msg,
+		lpvMsg,
 		debugStringInfo.nDebugStringLength,
 		NULL);
 
+	/* Convert debug message to Unicode. */
 	std::wstring debugString;
 	if (debugStringInfo.fUnicode)
 	{
-		debugString = msg;
+		wchar_t* wcPtr = reinterpret_cast<wchar_t*>(lpvMsg);
+		debugString = std::wstring(wcPtr);
 	}
 	else
 	{
-		debugString = (LPWSTR)msg;
+		char* cPtr = reinterpret_cast<char*>(lpvMsg);
+		
+		int wcharsNum = MultiByteToWideChar(CP_UTF8, 0, cPtr, -1, NULL, 0);
+		wchar_t* buff = new wchar_t[wcharsNum];
+		MultiByteToWideChar(CP_UTF8, 0, cPtr, -1, buff, wcharsNum);
+
+		debugString = std::wstring(buff);
+		delete[] buff;
 	}
-	delete[] msg;
+	delete[] lpvMsg;
 
 	return debugString;
 }
