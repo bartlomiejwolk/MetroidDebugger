@@ -17,17 +17,17 @@
 /*
 Source: https://stackoverflow.com/a/8098080/2964286
 */
-static std::wstring WStringFormat(const std::wstring fmt_str, ...)
+static std::wstring WStringFormat(const wchar_t* fmt_str, ...)
 {
-	int final_n, n = ((int)fmt_str.size()) * 2; /* Reserve two times as much as the length of the fmt_str */
+	int final_n, n = wcslen(fmt_str) * 2; // make it even
 	std::unique_ptr<wchar_t[]> formatted;
 	va_list ap;
 	while (1)
 	{
-		formatted.reset(new wchar_t[n]); /* Wrap the plain char array into the unique_ptr */
-		wcscpy_s(&formatted[0], n, fmt_str.c_str());
+		formatted.reset(new wchar_t[n]);
+		wcscpy_s(&formatted[0], n, fmt_str);
 		va_start(ap, fmt_str);
-		final_n = vswprintf(&formatted[0], n, fmt_str.c_str(), ap);
+		final_n = vswprintf(&formatted[0], n, fmt_str, ap);
 		va_end(ap);
 		if (final_n < 0 || final_n >= n)
 			n += abs(final_n - n + 1);
@@ -211,7 +211,8 @@ void DebuggerImpl::DebuggerThreadProc()
 		std::wstring eventMessage = {};
 		// used by `ContinueDebugEvent()` in case of exception
 		DWORD continueStatus = DBG_CONTINUE;
-		// DLL info cache, used to report about unloaded DLLs
+		/* DLL info cache, used to report about unloaded DLLs.
+		<lpBaseOfDll, eventMessage> */
 		std::map<LPVOID, std::wstring> DLLNameMap;
 
 		bool continueDebugging = true;
@@ -266,7 +267,10 @@ void DebuggerImpl::DebuggerThreadProc()
 				break;
 
 			case UNLOAD_DLL_DEBUG_EVENT:
-				eventMessage = WStringFormat(L"%s", DLLNameMap[debugEvent.u.UnloadDll.lpBaseOfDll]);
+				{
+					std::wstring DLLName = DLLNameMap[debugEvent.u.UnloadDll.lpBaseOfDll];
+					eventMessage = WStringFormat(L"%ls", DLLName.c_str());
+				}
 				break;
 
 			case OUTPUT_DEBUG_STRING_EVENT:
