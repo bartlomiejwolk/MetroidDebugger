@@ -39,7 +39,6 @@ static std::wstring WStringFormat(const wchar_t* fmt_str, ...)
 
 #define BUFSIZE 512
 
-// TODO Consider creating a namespace
 // This function is optimized!
 static std::wstring GetFileNameFromHandle(HANDLE hFile)
 {

@@ -16,8 +16,7 @@
 
 IMPLEMENT_DYNAMIC(CMetroidDebuggerDlg, CDialog)
 
-// TODO Consider creating a namespace
-DWORD WINAPI DebuggerThread(void* param)
+static DWORD WINAPI DebuggerThread(void* param)
 {
 	CMetroidDebuggerDlg* thisDlg = static_cast<CMetroidDebuggerDlg*>(param);
 	HWND thisDlgHandle = thisDlg->m_hWnd;
