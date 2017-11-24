@@ -12,6 +12,8 @@ public:
 	*/
 	void DebuggerThreadProc();
 
+	void CreateDebuggeeProcess();
+
 private:
 	/*
 	Full path to the executable to debug

@@ -273,71 +273,71 @@ std::wstring DebuggerImpl::GetDebugStringFromDebugEvent(
 
 void DebuggerImpl::DebuggerThreadProc()
 {
-	// Create debuggee process
-	{
-		STARTUPINFO startupInfo;
-
-		ZeroMemory(&startupInfo, sizeof(startupInfo));
-		startupInfo.cb = sizeof(startupInfo);
-		ZeroMemory(&ProcessInfo, sizeof(ProcessInfo));
-
-		CreateProcess(
-			DebuggeePath,
-			NULL,
-			NULL,
-			NULL,
-			false,
-			DEBUG_ONLY_THIS_PROCESS,
-			NULL,
-			NULL,
-			&startupInfo,
-			&ProcessInfo);
-	}
+	CreateDebuggeeProcess();
 
 	// Debugger loop
+	while (ContinueDebugging)
 	{
-		while (ContinueDebugging)
+		WaitForDebugEvent(&DebugEvent, INFINITE);
+
+		switch (DebugEvent.dwDebugEventCode)
 		{
-			WaitForDebugEvent(&DebugEvent, INFINITE);
+		case CREATE_PROCESS_DEBUG_EVENT:
+			HandleCreateProcessDebugEvent();
+			break;
 
-			switch (DebugEvent.dwDebugEventCode)
-			{
-			case CREATE_PROCESS_DEBUG_EVENT:
-				HandleCreateProcessDebugEvent();
-				break;
+		case CREATE_THREAD_DEBUG_EVENT:
+			HandleCreateThreadDebugEvent();
+			break;
 
-			case CREATE_THREAD_DEBUG_EVENT:
-				HandleCreateThreadDebugEvent();
-				break;
+		case EXIT_THREAD_DEBUG_EVENT:
+			HandleExitThreadDebugEvent();
+			break;
 
-			case EXIT_THREAD_DEBUG_EVENT:
-				HandleExitThreadDebugEvent();
-				break;
+		case EXIT_PROCESS_DEBUG_EVENT:
+			HandleExitProcessDebugEvent();
+			break;
 
-			case EXIT_PROCESS_DEBUG_EVENT:
-				HandleExitProcessDebugEvent();
-				break;
+		case LOAD_DLL_DEBUG_EVENT:
+			HandleLoadDllDebugEvent();
+			break;
 
-			case LOAD_DLL_DEBUG_EVENT:
-				HandleLoadDllDebugEvent();
-				break;
+		case UNLOAD_DLL_DEBUG_EVENT:
+			HandleUnloadDllDebugEvent();
+			break;
 
-			case UNLOAD_DLL_DEBUG_EVENT:
-				HandleUnloadDllDebugEvent();
-				break;
+		case OUTPUT_DEBUG_STRING_EVENT:
+			HandleOutputDebugStringEvent();
+			break;
 
-			case OUTPUT_DEBUG_STRING_EVENT:
-				HandleOutputDebugStringEvent();
-				break;
-
-			case EXCEPTION_DEBUG_EVENT:
-				HandleExceptionDebugEvent();
-				break;
-			}
-
-			SendMessage(DialogHandle, DEBUG_EVENT_MESSAGE, (WPARAM)&EventMessage, DebugEvent.dwDebugEventCode);
-			ContinueDebugEvent(DebugEvent.dwProcessId, DebugEvent.dwThreadId, ContinueStatus);
-			ContinueStatus = DBG_CONTINUE;
+		case EXCEPTION_DEBUG_EVENT:
+			HandleExceptionDebugEvent();
+			break;
 		}
+
+		SendMessage(DialogHandle, DEBUG_EVENT_MESSAGE, (WPARAM)&EventMessage, DebugEvent.dwDebugEventCode);
+		ContinueDebugEvent(DebugEvent.dwProcessId, DebugEvent.dwThreadId, ContinueStatus);
+		ContinueStatus = DBG_CONTINUE;
 	}
+}
+
+void DebuggerImpl::CreateDebuggeeProcess()
+{
+	STARTUPINFO startupInfo;
+
+	ZeroMemory(&startupInfo, sizeof(startupInfo));
+	startupInfo.cb = sizeof(startupInfo);
+	ZeroMemory(&ProcessInfo, sizeof(ProcessInfo));
+
+	CreateProcess(
+		DebuggeePath,
+		NULL,
+		NULL,
+		NULL,
+		false,
+		DEBUG_ONLY_THIS_PROCESS,
+		NULL,
+		NULL,
+		&startupInfo,
+		&ProcessInfo);
 }
