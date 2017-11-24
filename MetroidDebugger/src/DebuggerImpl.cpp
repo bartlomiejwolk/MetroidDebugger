@@ -24,7 +24,8 @@ DebuggerImpl::DebuggerImpl(LPCTSTR debugeePath, HWND dialogHandle) :
 	OsBreakpointHit(false),
 	ContinueDebugging(true),
 	ContinueStatus(DBG_CONTINUE),
-	DLLNameMap{}
+	DLLNameMap{},
+	DebuggeeStartAddress{}
 {
 }
 
@@ -226,13 +227,6 @@ std::wstring DebuggerImpl::GetFileNameFromHandle(HANDLE hFile)
 	return(strFilename);
 }
 
-DWORD DebuggerImpl::GetStartAddress(HANDLE hProcess, HANDLE hThread)
-{
-	// TODO implement
-	//(LPVOID)debugEvent.u.CreateProcessInfo.lpStartAddress;
-	return 0;
-}
-
 /*
 Source: https://stackoverflow.com/a/8098080/2964286
 */
@@ -259,6 +253,7 @@ std::wstring DebuggerImpl::WStringFormat(const wchar_t* fmt_str, ...)
 void DebuggerImpl::HandleCreateProcessDebugEvent()
 {
 	EventMessage = GetFileNameFromHandle(DebugEvent.u.CreateProcessInfo.hFile);
+	DebuggeeStartAddress = DebugEvent.u.CreateProcessInfo.lpStartAddress;
 }
 
 void DebuggerImpl::HandleCreateThreadDebugEvent()
@@ -336,13 +331,12 @@ void DebuggerImpl::HandleStatusBreakpointExceptionCode()
 
 void DebuggerImpl::InsertBreakpointInstruction()
 {
-	DWORD dwStartAddress = GetStartAddress(DebuggeeProcessInfo.hProcess, DebuggeeProcessInfo.hThread);
-	BYTE cInstruction;
-	DWORD dwReadBytes;
+	BYTE cInstruction{};
+	DWORD dwReadBytes{};
 
 	ReadProcessMemory(
 		DebuggeeProcessInfo.hProcess,
-		(void*)dwStartAddress,
+		(void*)DebuggeeStartAddress,
 		&cInstruction,
 		1,
 		&dwReadBytes);
@@ -352,12 +346,12 @@ void DebuggerImpl::InsertBreakpointInstruction()
 
 	WriteProcessMemory(
 		DebuggeeProcessInfo.hProcess,
-		(void*)dwStartAddress,
+		(void*)DebuggeeStartAddress,
 		&cInstruction,
 		1,
 		&dwReadBytes);
 
-	FlushInstructionCache(DebuggeeProcessInfo.hProcess, (void*)dwStartAddress, 1);
+	FlushInstructionCache(DebuggeeProcessInfo.hProcess, (void*)DebuggeeStartAddress, 1);
 }
 
 void DebuggerImpl::HandleOtherExceptionCode(const EXCEPTION_DEBUG_INFO &exceptionInfo)

@@ -72,14 +72,16 @@ private:
 	/*
 	*/
 	std::wstring GetFileNameFromHandle(HANDLE hFile);
-
-	/*
-	*/
-	DWORD GetStartAddress(HANDLE hProcess, HANDLE hThread);
 	
 	/*
 	*/
 	std::wstring WStringFormat(const wchar_t* fmt_str, ...);
+
+	/*
+	Start address of the debuggee main func. taken from `CREATE_PROCESS_DEBUG_INFO`
+	struct.
+	*/
+	LPTHREAD_START_ROUTINE DebuggeeStartAddress;
 
 	void HandleCreateProcessDebugEvent();
 	void HandleCreateThreadDebugEvent();
