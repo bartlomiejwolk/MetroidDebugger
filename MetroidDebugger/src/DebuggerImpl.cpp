@@ -4,15 +4,14 @@
 #include <string>
 #include <map>
 #include <Psapi.h>
-#include "Defines.h"
-#include "DebuggerImpl.h"
 #include <memory>
 #include <iosfwd>
-
 #include <stdarg.h>  // For va_start, etc.
 #include <memory>    // For std::unique_ptr
 #include <string.h>
 #include <utility>
+#include "Defines.h"
+#include "DebuggerImpl.h"
 
 #define BUFSIZE 512
 
