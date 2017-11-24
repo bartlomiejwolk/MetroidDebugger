@@ -136,7 +136,7 @@ DWORD DebuggerImpl::GetStartAddress(HANDLE hProcess, HANDLE hThread)
 
 void DebuggerImpl::HandleCreateProcessDebugEvent()
 {
-	GLOBAL_eventMessage = GetFileNameFromHandle(GLOBAL_debugEvent.u.CreateProcessInfo.hFile);
+	EventMessage = GetFileNameFromHandle(DebugEvent.u.CreateProcessInfo.hFile);
 
 	// insert break point instruction at program start
 	{
@@ -153,48 +153,48 @@ void DebuggerImpl::HandleCreateProcessDebugEvent()
 
 void DebuggerImpl::HandleCreateThreadDebugEvent()
 {
-	GLOBAL_eventMessage = WStringFormat(
+	EventMessage = WStringFormat(
 		L"Thread 0x%x (Id. %d) created at: 0x%x",
-		GLOBAL_debugEvent.u.CreateThread.hThread,
-		GLOBAL_debugEvent.dwThreadId,
-		GLOBAL_debugEvent.u.CreateThread.lpStartAddress);
+		DebugEvent.u.CreateThread.hThread,
+		DebugEvent.dwThreadId,
+		DebugEvent.u.CreateThread.lpStartAddress);
 }
 
 void DebuggerImpl::HandleExitThreadDebugEvent()
 {
-	GLOBAL_eventMessage = WStringFormat(
+	EventMessage = WStringFormat(
 		L"Thread %d exited with code: %d",
-		GLOBAL_debugEvent.dwThreadId,
-		GLOBAL_debugEvent.u.ExitThread.dwExitCode);
+		DebugEvent.dwThreadId,
+		DebugEvent.u.ExitThread.dwExitCode);
 }
 
 void DebuggerImpl::HandleExitProcessDebugEvent()
 {
-	GLOBAL_eventMessage = WStringFormat(L"0x%x", GLOBAL_debugEvent.u.ExitProcess.dwExitCode);
-	GLOBAL_continueDebugging = false;
+	EventMessage = WStringFormat(L"0x%x", DebugEvent.u.ExitProcess.dwExitCode);
+	ContinueDebugging = false;
 }
 
 void DebuggerImpl::HandleLoadDllDebugEvent()
 {
-	GLOBAL_eventMessage = GetFileNameFromHandle(GLOBAL_debugEvent.u.LoadDll.hFile); "";
-	GLOBAL_DLLNameMap.insert(std::make_pair(GLOBAL_debugEvent.u.LoadDll.lpBaseOfDll, GLOBAL_eventMessage));
-	GLOBAL_eventMessage += WStringFormat(L" %x", GLOBAL_debugEvent.u.LoadDll.lpBaseOfDll);
+	EventMessage = GetFileNameFromHandle(DebugEvent.u.LoadDll.hFile); "";
+	DLLNameMap.insert(std::make_pair(DebugEvent.u.LoadDll.lpBaseOfDll, EventMessage));
+	EventMessage += WStringFormat(L" %x", DebugEvent.u.LoadDll.lpBaseOfDll);
 }
 
 void DebuggerImpl::HandleUnloadDllDebugEvent()
 {
-	std::wstring DLLName = GLOBAL_DLLNameMap[GLOBAL_debugEvent.u.UnloadDll.lpBaseOfDll];
-	GLOBAL_eventMessage = WStringFormat(L"%ls", DLLName.c_str());
+	std::wstring DLLName = DLLNameMap[DebugEvent.u.UnloadDll.lpBaseOfDll];
+	EventMessage = WStringFormat(L"%ls", DLLName.c_str());
 }
 
 void DebuggerImpl::HandleOutputDebugStringEvent()
 {
-	GLOBAL_eventMessage = GetDebugStringFromDebugEvent(GLOBAL_debugEvent, GLOBAL_processInfo);
+	EventMessage = GetDebugStringFromDebugEvent(DebugEvent, ProcessInfo);
 }
 
 void DebuggerImpl::HandleExceptionDebugEvent()
 {
-	const EXCEPTION_DEBUG_INFO& exceptionInfo = GLOBAL_debugEvent.u.Exception;
+	const EXCEPTION_DEBUG_INFO& exceptionInfo = DebugEvent.u.Exception;
 	switch (exceptionInfo.ExceptionRecord.ExceptionCode)
 	{
 	case STATUS_BREAKPOINT:
@@ -204,7 +204,7 @@ void DebuggerImpl::HandleExceptionDebugEvent()
 		{
 			CONTEXT lcContext;
 			lcContext.ContextFlags = CONTEXT_ALL;
-			GetThreadContext(GLOBAL_processInfo.hThread, &lcContext);
+			GetThreadContext(ProcessInfo.hThread, &lcContext);
 		}
 		// First brakpoint sent by OS
 		else
@@ -212,18 +212,18 @@ void DebuggerImpl::HandleExceptionDebugEvent()
 			OsBreakpointHit = true;
 		}
 	}
-	GLOBAL_eventMessage = L"Break point";
+	EventMessage = L"Break point";
 	break;
 
 	default:
 		if (exceptionInfo.dwFirstChance == 1)
 		{
-			GLOBAL_eventMessage = WStringFormat(
+			EventMessage = WStringFormat(
 				L"First chance exception at %x, exception code: 0x%08x",
 				exceptionInfo.ExceptionRecord.ExceptionAddress,
 				exceptionInfo.ExceptionRecord.ExceptionCode);
 		}
-		GLOBAL_continueStatus = DBG_EXCEPTION_NOT_HANDLED;
+		ContinueStatus = DBG_EXCEPTION_NOT_HANDLED;
 	}
 }
 
@@ -274,13 +274,12 @@ std::wstring DebuggerImpl::GetDebugStringFromDebugEvent(
 void DebuggerImpl::DebuggerThreadProc()
 {
 	// Create debuggee process
-	PROCESS_INFORMATION processInfo;
 	{
 		STARTUPINFO startupInfo;
 
 		ZeroMemory(&startupInfo, sizeof(startupInfo));
 		startupInfo.cb = sizeof(startupInfo);
-		ZeroMemory(&processInfo, sizeof(processInfo));
+		ZeroMemory(&ProcessInfo, sizeof(ProcessInfo));
 
 		CreateProcess(
 			DebuggeePath,
@@ -292,27 +291,16 @@ void DebuggerImpl::DebuggerThreadProc()
 			NULL,
 			NULL,
 			&startupInfo,
-			&processInfo);
+			&ProcessInfo);
 	}
 
 	// Debugger loop
 	{
-		// debug event data from the OS
-		DEBUG_EVENT debugEvent = {};
-		// message displayed to the user
-		std::wstring eventMessage = {};
-		// used by `ContinueDebugEvent()` in case of exception
-		DWORD continueStatus = DBG_CONTINUE;
-		/* DLL info cache, used to report about unloaded DLLs.
-		<lpBaseOfDll, eventMessage> */
-		std::map<LPVOID, std::wstring> DLLNameMap;
-
-		bool continueDebugging = true;
-		while (continueDebugging)
+		while (ContinueDebugging)
 		{
-			WaitForDebugEvent(&debugEvent, INFINITE);
+			WaitForDebugEvent(&DebugEvent, INFINITE);
 
-			switch (debugEvent.dwDebugEventCode)
+			switch (DebugEvent.dwDebugEventCode)
 			{
 			case CREATE_PROCESS_DEBUG_EVENT:
 				HandleCreateProcessDebugEvent();
@@ -347,9 +335,9 @@ void DebuggerImpl::DebuggerThreadProc()
 				break;
 			}
 
-			SendMessage(DialogHandle, DEBUG_EVENT_MESSAGE, (WPARAM)&eventMessage, debugEvent.dwDebugEventCode);
-			ContinueDebugEvent(debugEvent.dwProcessId, debugEvent.dwThreadId, continueStatus);
-			continueStatus = DBG_CONTINUE;
+			SendMessage(DialogHandle, DEBUG_EVENT_MESSAGE, (WPARAM)&EventMessage, DebugEvent.dwDebugEventCode);
+			ContinueDebugEvent(DebugEvent.dwProcessId, DebugEvent.dwThreadId, ContinueStatus);
+			ContinueStatus = DBG_CONTINUE;
 		}
 	}
 }

@@ -26,17 +26,17 @@ private:
 	bool OsBreakpointHit;
 
 	// TODO rename
-	std::wstring GLOBAL_eventMessage = {};
+	std::wstring EventMessage = {};
 
-	DEBUG_EVENT GLOBAL_debugEvent = {};
+	DEBUG_EVENT DebugEvent = {};
 
-	bool GLOBAL_continueDebugging = false;
+	bool ContinueDebugging = true;
 
-	std::map<LPVOID, std::wstring> GLOBAL_DLLNameMap;
+	std::map<LPVOID, std::wstring> DLLNameMap;
 
-	PROCESS_INFORMATION GLOBAL_processInfo = {};
+	PROCESS_INFORMATION ProcessInfo = {};
 	
-	DWORD GLOBAL_continueStatus = DBG_CONTINUE;
+	DWORD ContinueStatus = DBG_CONTINUE;
 
 	/*
 	*/
