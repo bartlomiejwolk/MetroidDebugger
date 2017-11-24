@@ -318,30 +318,46 @@ void DebuggerImpl::HandleExceptionDebugEvent()
 void DebuggerImpl::HandleStatusBreakpointExceptionCode()
 {
 	// breakpoint that was set by the debugger
+	// #TODO implement
 	if (OsBreakpointHit)
 	{
 		CONTEXT lcContext;
 		lcContext.ContextFlags = CONTEXT_ALL;
 		GetThreadContext(DebuggeeProcessInfo.hThread, &lcContext);
 	}
-	// First brakpoint sent by OS
+	// first brakpoint sent by the OS
 	else
 	{
 		OsBreakpointHit = true;
-
-		// insert break point instruction at program start
-		{
-			/*DWORD dwStartAddress = GetStartAddress(processInfo.hProcess, processInfo.hThread);
-			BYTE cInstruction;
-			DWORD dwReadBytes;
-			ReadProcessMemory(processInfo.hProcess, (void*)dwStartAddress, &cInstruction, 1, &dwReadBytes);
-			BYTE originalInstruction = cInstruction;
-			cInstruction = 0xCC;
-			WriteProcessMemory(processInfo.hProcess, (void*)dwStartAddress, &cInstruction, 1, &dwReadBytes);
-			FlushInstructionCache(processInfo.hProcess, (void*)dwStartAddress, 1);*/
-		}
+		InsertBreakpointInstruction();
 	}
 	EventMessage = L"Break point";
+}
+
+void DebuggerImpl::InsertBreakpointInstruction()
+{
+	DWORD dwStartAddress = GetStartAddress(DebuggeeProcessInfo.hProcess, DebuggeeProcessInfo.hThread);
+	BYTE cInstruction;
+	DWORD dwReadBytes;
+
+	ReadProcessMemory(
+		DebuggeeProcessInfo.hProcess,
+		(void*)dwStartAddress,
+		&cInstruction,
+		1,
+		&dwReadBytes);
+
+	BYTE originalInstruction = cInstruction;
+	cInstruction = 0xCC;
+
+	WriteProcessMemory(
+		DebuggeeProcessInfo.hProcess,
+		(void*)dwStartAddress,
+		&cInstruction,
+		1,
+		&dwReadBytes);
+
+	FlushInstructionCache(DebuggeeProcessInfo.hProcess, (void*)dwStartAddress, 1);
 }
 
 void DebuggerImpl::HandleOtherExceptionCode(const EXCEPTION_DEBUG_INFO &exceptionInfo)

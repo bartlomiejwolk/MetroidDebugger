@@ -91,5 +91,6 @@ private:
 	void HandleExceptionDebugEvent();
 
 	void HandleStatusBreakpointExceptionCode();
+	void InsertBreakpointInstruction();
 	void HandleOtherExceptionCode(const EXCEPTION_DEBUG_INFO &exceptionInfo);
 };
