@@ -259,18 +259,6 @@ std::wstring DebuggerImpl::WStringFormat(const wchar_t* fmt_str, ...)
 void DebuggerImpl::HandleCreateProcessDebugEvent()
 {
 	EventMessage = GetFileNameFromHandle(DebugEvent.u.CreateProcessInfo.hFile);
-
-	// insert break point instruction at program start
-	{
-		/*DWORD dwStartAddress = GetStartAddress(processInfo.hProcess, processInfo.hThread);
-		BYTE cInstruction;
-		DWORD dwReadBytes;
-		ReadProcessMemory(processInfo.hProcess, (void*)dwStartAddress, &cInstruction, 1, &dwReadBytes);
-		BYTE originalInstruction = cInstruction;
-		cInstruction = 0xCC;
-		WriteProcessMemory(processInfo.hProcess, (void*)dwStartAddress, &cInstruction, 1, &dwReadBytes);
-		FlushInstructionCache(processInfo.hProcess, (void*)dwStartAddress, 1);*/
-	}
 }
 
 void DebuggerImpl::HandleCreateThreadDebugEvent()
@@ -320,31 +308,50 @@ void DebuggerImpl::HandleExceptionDebugEvent()
 	switch (exceptionInfo.ExceptionRecord.ExceptionCode)
 	{
 	case STATUS_BREAKPOINT:
+		HandleStatusBreakpointExceptionCode();
+		break;
+	default:
+		HandleOtherExceptionCode(exceptionInfo);
+	}
+}
+
+void DebuggerImpl::HandleStatusBreakpointExceptionCode()
+{
+	// breakpoint that was set by the debugger
+	if (OsBreakpointHit)
 	{
-		// breakpoint that was set by the debugger
-		if (OsBreakpointHit)
+		CONTEXT lcContext;
+		lcContext.ContextFlags = CONTEXT_ALL;
+		GetThreadContext(DebuggeeProcessInfo.hThread, &lcContext);
+	}
+	// First brakpoint sent by OS
+	else
+	{
+		OsBreakpointHit = true;
+
+		// insert break point instruction at program start
 		{
-			CONTEXT lcContext;
-			lcContext.ContextFlags = CONTEXT_ALL;
-			GetThreadContext(DebuggeeProcessInfo.hThread, &lcContext);
-		}
-		// First brakpoint sent by OS
-		else
-		{
-			OsBreakpointHit = true;
+			/*DWORD dwStartAddress = GetStartAddress(processInfo.hProcess, processInfo.hThread);
+			BYTE cInstruction;
+			DWORD dwReadBytes;
+			ReadProcessMemory(processInfo.hProcess, (void*)dwStartAddress, &cInstruction, 1, &dwReadBytes);
+			BYTE originalInstruction = cInstruction;
+			cInstruction = 0xCC;
+			WriteProcessMemory(processInfo.hProcess, (void*)dwStartAddress, &cInstruction, 1, &dwReadBytes);
+			FlushInstructionCache(processInfo.hProcess, (void*)dwStartAddress, 1);*/
 		}
 	}
 	EventMessage = L"Break point";
-	break;
+}
 
-	default:
-		if (exceptionInfo.dwFirstChance == 1)
-		{
-			EventMessage = WStringFormat(
-				L"First chance exception at %x, exception code: 0x%08x",
-				exceptionInfo.ExceptionRecord.ExceptionAddress,
-				exceptionInfo.ExceptionRecord.ExceptionCode);
-		}
-		ContinueStatus = DBG_EXCEPTION_NOT_HANDLED;
+void DebuggerImpl::HandleOtherExceptionCode(const EXCEPTION_DEBUG_INFO &exceptionInfo)
+{
+	if (exceptionInfo.dwFirstChance == 1)
+	{
+		EventMessage = WStringFormat(
+			L"First chance exception at %x, exception code: 0x%08x",
+			exceptionInfo.ExceptionRecord.ExceptionAddress,
+			exceptionInfo.ExceptionRecord.ExceptionCode);
 	}
+	ContinueStatus = DBG_EXCEPTION_NOT_HANDLED;
 }

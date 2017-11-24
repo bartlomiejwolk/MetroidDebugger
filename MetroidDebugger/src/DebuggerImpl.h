@@ -89,4 +89,7 @@ private:
 	void HandleUnloadDllDebugEvent();
 	void HandleOutputDebugStringEvent();
 	void HandleExceptionDebugEvent();
+
+	void HandleStatusBreakpointExceptionCode();
+	void HandleOtherExceptionCode(const EXCEPTION_DEBUG_INFO &exceptionInfo);
 };
