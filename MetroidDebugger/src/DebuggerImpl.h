@@ -8,30 +8,24 @@ public:
 
 	/*
 	Creates process to debug, listenes and handles debug events, controls
-	execution of the debugee. Method executed on a separate thread.
+	execution of the debugee.
 	*/
 	void DebuggerThreadProc();
 
-	void CreateDebuggeeProcess();
-
 private:
-	/*
-	Full path to the executable to debug
-	*/
-	LPCTSTR DebuggeePath;
-	
 	// TODO rename to MainDialogHandle
 	HWND DialogHandle;
 
 	/*
-	True if the very first breakpoint sent by the OS on application start was hit.
+	Full path to the executable to debug
 	*/
-	bool OsBreakpointHit;
+	LPCTSTR DebuggeePath;
 
 	/*
-	Message to be displayed to the user on debug event.
+	Process info returned by OS CreateProcess() function.
 	*/
-	std::wstring EventMessage = {};
+	// TODO rename to DebuggeeProcessInfo
+	PROCESS_INFORMATION ProcessInfo = {};
 
 	/*
 	Last debug event info returned by OS function `WaitForDebugEvent()`.
@@ -39,9 +33,24 @@ private:
 	DEBUG_EVENT DebugEvent = {};
 
 	/*
+	Message to be displayed to the user on debug event.
+	*/
+	std::wstring EventMessage = {};
+
+	/*
+	True if the very first breakpoint sent by the OS on application start was hit.
+	*/
+	bool OsBreakpointHit;
+
+	/*
 	Controls debugger loop. The debugger thread will end when this is set to false.
 	*/
 	bool ContinueDebugging = true;
+
+	/*
+	Use by `ContinueDebugEvent()` in the debugger loop to control debuggee.
+	*/
+	DWORD ContinueStatus = DBG_CONTINUE;
 
 	/*
 	Cache used to store loaded DLL names. Used to report unloaded DLLs.
@@ -50,16 +59,8 @@ private:
 	*/
 	std::map<LPVOID, std::wstring> DLLNameMap;
 
-	/*
-	Process info returned by OS CreateProcess() function.
-	*/
-	// TODO rename to DebuggeeProcessInfo
-	PROCESS_INFORMATION ProcessInfo = {};
-	
-	/*
-	Use by `ContinueDebugEvent()` in the debugger loop to control debuggee.
-	*/
-	DWORD ContinueStatus = DBG_CONTINUE;
+private:
+	void CreateDebuggeeProcess();
 
 	/*
 	*/
@@ -69,16 +70,16 @@ private:
 
 	/*
 	*/
-	std::wstring WStringFormat(const wchar_t* fmt_str, ...);
-
-	/*
-	*/
 	std::wstring GetFileNameFromHandle(HANDLE hFile);
 
 	/*
 	*/
 	DWORD GetStartAddress(HANDLE hProcess, HANDLE hThread);
 	
+	/*
+	*/
+	std::wstring WStringFormat(const wchar_t* fmt_str, ...);
+
 	void HandleCreateProcessDebugEvent();
 	void HandleCreateThreadDebugEvent();
 	void HandleExitThreadDebugEvent();

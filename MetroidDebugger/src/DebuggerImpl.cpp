@@ -14,30 +14,122 @@
 #include <string.h>
 #include <utility>
 
-/*
-Source: https://stackoverflow.com/a/8098080/2964286
-*/
-std::wstring DebuggerImpl::WStringFormat(const wchar_t* fmt_str, ...)
+#define BUFSIZE 512
+
+DebuggerImpl::DebuggerImpl(LPCTSTR debugeePath, HWND dialogHandle)
+	: DebuggeePath(debugeePath), DialogHandle(dialogHandle), OsBreakpointHit(false)
 {
-	int final_n, n = wcslen(fmt_str) * 2; // make it even
-	std::unique_ptr<wchar_t[]> formatted;
-	va_list ap;
-	while (1)
-	{
-		formatted.reset(new wchar_t[n]);
-		wcscpy_s(&formatted[0], n, fmt_str);
-		va_start(ap, fmt_str);
-		final_n = vswprintf(&formatted[0], n, fmt_str, ap);
-		va_end(ap);
-		if (final_n < 0 || final_n >= n)
-			n += abs(final_n - n + 1);
-		else
-			break;
-	}
-	return std::wstring(formatted.get());
 }
 
-#define BUFSIZE 512
+void DebuggerImpl::DebuggerThreadProc()
+{
+	CreateDebuggeeProcess();
+
+	// Debugger loop
+	while (ContinueDebugging)
+	{
+		WaitForDebugEvent(&DebugEvent, INFINITE);
+
+		switch (DebugEvent.dwDebugEventCode)
+		{
+		case CREATE_PROCESS_DEBUG_EVENT:
+			HandleCreateProcessDebugEvent();
+			break;
+
+		case CREATE_THREAD_DEBUG_EVENT:
+			HandleCreateThreadDebugEvent();
+			break;
+
+		case EXIT_THREAD_DEBUG_EVENT:
+			HandleExitThreadDebugEvent();
+			break;
+
+		case EXIT_PROCESS_DEBUG_EVENT:
+			HandleExitProcessDebugEvent();
+			break;
+
+		case LOAD_DLL_DEBUG_EVENT:
+			HandleLoadDllDebugEvent();
+			break;
+
+		case UNLOAD_DLL_DEBUG_EVENT:
+			HandleUnloadDllDebugEvent();
+			break;
+
+		case OUTPUT_DEBUG_STRING_EVENT:
+			HandleOutputDebugStringEvent();
+			break;
+
+		case EXCEPTION_DEBUG_EVENT:
+			HandleExceptionDebugEvent();
+			break;
+		}
+
+		SendMessage(DialogHandle, DEBUG_EVENT_MESSAGE, (WPARAM)&EventMessage, DebugEvent.dwDebugEventCode);
+		ContinueDebugEvent(DebugEvent.dwProcessId, DebugEvent.dwThreadId, ContinueStatus);
+		ContinueStatus = DBG_CONTINUE;
+	}
+}
+
+void DebuggerImpl::CreateDebuggeeProcess()
+{
+	STARTUPINFO startupInfo;
+
+	ZeroMemory(&startupInfo, sizeof(startupInfo));
+	startupInfo.cb = sizeof(startupInfo);
+	ZeroMemory(&ProcessInfo, sizeof(ProcessInfo));
+
+	CreateProcess(
+		DebuggeePath,
+		NULL,
+		NULL,
+		NULL,
+		false,
+		DEBUG_ONLY_THIS_PROCESS,
+		NULL,
+		NULL,
+		&startupInfo,
+		&ProcessInfo);
+}
+
+std::wstring DebuggerImpl::GetDebugStringFromDebugEvent(
+	const DEBUG_EVENT &debugEvent,
+	const PROCESS_INFORMATION &processInfo) const
+{
+	const OUTPUT_DEBUG_STRING_INFO& debugStringInfo = debugEvent.u.DebugString;
+
+	/* Read debug message */
+	LPVOID* lpvMsg = new LPVOID[debugStringInfo.nDebugStringLength];
+	ZeroMemory(lpvMsg, debugStringInfo.nDebugStringLength);
+	ReadProcessMemory(
+		processInfo.hProcess,
+		debugStringInfo.lpDebugStringData,
+		lpvMsg,
+		debugStringInfo.nDebugStringLength,
+		NULL);
+
+	/* Convert debug message to Unicode. */
+	std::wstring debugString;
+	if (debugStringInfo.fUnicode)
+	{
+		wchar_t* wcPtr = reinterpret_cast<wchar_t*>(lpvMsg);
+		debugString = std::wstring(wcPtr);
+	}
+	else
+	{
+		char* cPtr = reinterpret_cast<char*>(lpvMsg);
+		
+		int wcharsNum = MultiByteToWideChar(CP_UTF8, 0, cPtr, -1, NULL, 0);
+		wchar_t* buff = new wchar_t[wcharsNum];
+		MultiByteToWideChar(CP_UTF8, 0, cPtr, -1, buff, wcharsNum);
+
+		debugString = std::wstring(buff);
+		delete[] buff;
+	}
+	delete[] lpvMsg;
+
+	return debugString;
+}
 
 // This function is optimized!
 std::wstring DebuggerImpl::GetFileNameFromHandle(HANDLE hFile)
@@ -134,6 +226,29 @@ DWORD DebuggerImpl::GetStartAddress(HANDLE hProcess, HANDLE hThread)
 	return 0;
 }
 
+/*
+Source: https://stackoverflow.com/a/8098080/2964286
+*/
+std::wstring DebuggerImpl::WStringFormat(const wchar_t* fmt_str, ...)
+{
+	int final_n, n = wcslen(fmt_str) * 2; // make it even
+	std::unique_ptr<wchar_t[]> formatted;
+	va_list ap;
+	while (1)
+	{
+		formatted.reset(new wchar_t[n]);
+		wcscpy_s(&formatted[0], n, fmt_str);
+		va_start(ap, fmt_str);
+		final_n = vswprintf(&formatted[0], n, fmt_str, ap);
+		va_end(ap);
+		if (final_n < 0 || final_n >= n)
+			n += abs(final_n - n + 1);
+		else
+			break;
+	}
+	return std::wstring(formatted.get());
+}
+
 void DebuggerImpl::HandleCreateProcessDebugEvent()
 {
 	EventMessage = GetFileNameFromHandle(DebugEvent.u.CreateProcessInfo.hFile);
@@ -225,119 +340,4 @@ void DebuggerImpl::HandleExceptionDebugEvent()
 		}
 		ContinueStatus = DBG_EXCEPTION_NOT_HANDLED;
 	}
-}
-
-DebuggerImpl::DebuggerImpl(LPCTSTR debugeePath, HWND dialogHandle)
-	: DebuggeePath(debugeePath), DialogHandle(dialogHandle), OsBreakpointHit(false)
-{
-}
-
-std::wstring DebuggerImpl::GetDebugStringFromDebugEvent(
-	const DEBUG_EVENT &debugEvent,
-	const PROCESS_INFORMATION &processInfo) const
-{
-	const OUTPUT_DEBUG_STRING_INFO& debugStringInfo = debugEvent.u.DebugString;
-
-	/* Read debug message */
-	LPVOID* lpvMsg = new LPVOID[debugStringInfo.nDebugStringLength];
-	ZeroMemory(lpvMsg, debugStringInfo.nDebugStringLength);
-	ReadProcessMemory(
-		processInfo.hProcess,
-		debugStringInfo.lpDebugStringData,
-		lpvMsg,
-		debugStringInfo.nDebugStringLength,
-		NULL);
-
-	/* Convert debug message to Unicode. */
-	std::wstring debugString;
-	if (debugStringInfo.fUnicode)
-	{
-		wchar_t* wcPtr = reinterpret_cast<wchar_t*>(lpvMsg);
-		debugString = std::wstring(wcPtr);
-	}
-	else
-	{
-		char* cPtr = reinterpret_cast<char*>(lpvMsg);
-		
-		int wcharsNum = MultiByteToWideChar(CP_UTF8, 0, cPtr, -1, NULL, 0);
-		wchar_t* buff = new wchar_t[wcharsNum];
-		MultiByteToWideChar(CP_UTF8, 0, cPtr, -1, buff, wcharsNum);
-
-		debugString = std::wstring(buff);
-		delete[] buff;
-	}
-	delete[] lpvMsg;
-
-	return debugString;
-}
-
-void DebuggerImpl::DebuggerThreadProc()
-{
-	CreateDebuggeeProcess();
-
-	// Debugger loop
-	while (ContinueDebugging)
-	{
-		WaitForDebugEvent(&DebugEvent, INFINITE);
-
-		switch (DebugEvent.dwDebugEventCode)
-		{
-		case CREATE_PROCESS_DEBUG_EVENT:
-			HandleCreateProcessDebugEvent();
-			break;
-
-		case CREATE_THREAD_DEBUG_EVENT:
-			HandleCreateThreadDebugEvent();
-			break;
-
-		case EXIT_THREAD_DEBUG_EVENT:
-			HandleExitThreadDebugEvent();
-			break;
-
-		case EXIT_PROCESS_DEBUG_EVENT:
-			HandleExitProcessDebugEvent();
-			break;
-
-		case LOAD_DLL_DEBUG_EVENT:
-			HandleLoadDllDebugEvent();
-			break;
-
-		case UNLOAD_DLL_DEBUG_EVENT:
-			HandleUnloadDllDebugEvent();
-			break;
-
-		case OUTPUT_DEBUG_STRING_EVENT:
-			HandleOutputDebugStringEvent();
-			break;
-
-		case EXCEPTION_DEBUG_EVENT:
-			HandleExceptionDebugEvent();
-			break;
-		}
-
-		SendMessage(DialogHandle, DEBUG_EVENT_MESSAGE, (WPARAM)&EventMessage, DebugEvent.dwDebugEventCode);
-		ContinueDebugEvent(DebugEvent.dwProcessId, DebugEvent.dwThreadId, ContinueStatus);
-		ContinueStatus = DBG_CONTINUE;
-	}
-}
-
-void DebuggerImpl::CreateDebuggeeProcess()
-{
-	STARTUPINFO startupInfo;
-
-	ZeroMemory(&startupInfo, sizeof(startupInfo));
-	startupInfo.cb = sizeof(startupInfo);
-	ZeroMemory(&ProcessInfo, sizeof(ProcessInfo));
-
-	CreateProcess(
-		DebuggeePath,
-		NULL,
-		NULL,
-		NULL,
-		false,
-		DEBUG_ONLY_THIS_PROCESS,
-		NULL,
-		NULL,
-		&startupInfo,
-		&ProcessInfo);
 }
