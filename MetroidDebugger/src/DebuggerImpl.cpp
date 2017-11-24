@@ -17,7 +17,7 @@
 /*
 Source: https://stackoverflow.com/a/8098080/2964286
 */
-static std::wstring WStringFormat(const wchar_t* fmt_str, ...)
+std::wstring DebuggerImpl::WStringFormat(const wchar_t* fmt_str, ...)
 {
 	int final_n, n = wcslen(fmt_str) * 2; // make it even
 	std::unique_ptr<wchar_t[]> formatted;
@@ -40,7 +40,7 @@ static std::wstring WStringFormat(const wchar_t* fmt_str, ...)
 #define BUFSIZE 512
 
 // This function is optimized!
-static std::wstring GetFileNameFromHandle(HANDLE hFile)
+std::wstring DebuggerImpl::GetFileNameFromHandle(HANDLE hFile)
 {
 	BOOL bSuccess = FALSE;
 	TCHAR pszFilename[MAX_PATH + 1];
@@ -127,7 +127,7 @@ static std::wstring GetFileNameFromHandle(HANDLE hFile)
 	return(strFilename);
 }
 
-static DWORD GetStartAddress(HANDLE hProcess, HANDLE hThread)
+DWORD DebuggerImpl::GetStartAddress(HANDLE hProcess, HANDLE hThread)
 {
 	// TODO implement
 	//(LPVOID)debugEvent.u.CreateProcessInfo.lpStartAddress;

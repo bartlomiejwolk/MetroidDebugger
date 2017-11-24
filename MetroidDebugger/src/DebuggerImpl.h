@@ -30,4 +30,16 @@ private:
 	std::wstring GetDebugStringFromDebugEvent(
 		const DEBUG_EVENT& debugEvent,
 		const PROCESS_INFORMATION& processInfo) const;
+
+	/*
+	*/
+	std::wstring WStringFormat(const wchar_t* fmt_str, ...);
+
+	/*
+	*/
+	std::wstring GetFileNameFromHandle(HANDLE hFile);
+
+	/*
+	*/
+	DWORD GetStartAddress(HANDLE hProcess, HANDLE hThread);
 };
