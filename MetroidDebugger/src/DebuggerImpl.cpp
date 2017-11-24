@@ -134,6 +134,99 @@ DWORD DebuggerImpl::GetStartAddress(HANDLE hProcess, HANDLE hThread)
 	return 0;
 }
 
+void DebuggerImpl::HandleCreateProcessDebugEvent()
+{
+	GLOBAL_eventMessage = GetFileNameFromHandle(GLOBAL_debugEvent.u.CreateProcessInfo.hFile);
+
+	// insert break point instruction at program start
+	{
+		/*DWORD dwStartAddress = GetStartAddress(processInfo.hProcess, processInfo.hThread);
+		BYTE cInstruction;
+		DWORD dwReadBytes;
+		ReadProcessMemory(processInfo.hProcess, (void*)dwStartAddress, &cInstruction, 1, &dwReadBytes);
+		BYTE originalInstruction = cInstruction;
+		cInstruction = 0xCC;
+		WriteProcessMemory(processInfo.hProcess, (void*)dwStartAddress, &cInstruction, 1, &dwReadBytes);
+		FlushInstructionCache(processInfo.hProcess, (void*)dwStartAddress, 1);*/
+	}
+}
+
+void DebuggerImpl::HandleCreateThreadDebugEvent()
+{
+	GLOBAL_eventMessage = WStringFormat(
+		L"Thread 0x%x (Id. %d) created at: 0x%x",
+		GLOBAL_debugEvent.u.CreateThread.hThread,
+		GLOBAL_debugEvent.dwThreadId,
+		GLOBAL_debugEvent.u.CreateThread.lpStartAddress);
+}
+
+void DebuggerImpl::HandleExitThreadDebugEvent()
+{
+	GLOBAL_eventMessage = WStringFormat(
+		L"Thread %d exited with code: %d",
+		GLOBAL_debugEvent.dwThreadId,
+		GLOBAL_debugEvent.u.ExitThread.dwExitCode);
+}
+
+void DebuggerImpl::HandleExitProcessDebugEvent()
+{
+	GLOBAL_eventMessage = WStringFormat(L"0x%x", GLOBAL_debugEvent.u.ExitProcess.dwExitCode);
+	GLOBAL_continueDebugging = false;
+}
+
+void DebuggerImpl::HandleLoadDllDebugEvent()
+{
+	GLOBAL_eventMessage = GetFileNameFromHandle(GLOBAL_debugEvent.u.LoadDll.hFile); "";
+	GLOBAL_DLLNameMap.insert(std::make_pair(GLOBAL_debugEvent.u.LoadDll.lpBaseOfDll, GLOBAL_eventMessage));
+	GLOBAL_eventMessage += WStringFormat(L" %x", GLOBAL_debugEvent.u.LoadDll.lpBaseOfDll);
+}
+
+void DebuggerImpl::HandleUnloadDllDebugEvent()
+{
+	std::wstring DLLName = GLOBAL_DLLNameMap[GLOBAL_debugEvent.u.UnloadDll.lpBaseOfDll];
+	GLOBAL_eventMessage = WStringFormat(L"%ls", DLLName.c_str());
+}
+
+void DebuggerImpl::HandleOutputDebugStringEvent()
+{
+	GLOBAL_eventMessage = GetDebugStringFromDebugEvent(GLOBAL_debugEvent, GLOBAL_processInfo);
+}
+
+void DebuggerImpl::HandleExceptionDebugEvent()
+{
+	const EXCEPTION_DEBUG_INFO& exceptionInfo = GLOBAL_debugEvent.u.Exception;
+	switch (exceptionInfo.ExceptionRecord.ExceptionCode)
+	{
+	case STATUS_BREAKPOINT:
+	{
+		// breakpoint that was set by the debugger
+		if (OsBreakpointHit)
+		{
+			CONTEXT lcContext;
+			lcContext.ContextFlags = CONTEXT_ALL;
+			GetThreadContext(GLOBAL_processInfo.hThread, &lcContext);
+		}
+		// First brakpoint sent by OS
+		else
+		{
+			OsBreakpointHit = true;
+		}
+	}
+	GLOBAL_eventMessage = L"Break point";
+	break;
+
+	default:
+		if (exceptionInfo.dwFirstChance == 1)
+		{
+			GLOBAL_eventMessage = WStringFormat(
+				L"First chance exception at %x, exception code: 0x%08x",
+				exceptionInfo.ExceptionRecord.ExceptionAddress,
+				exceptionInfo.ExceptionRecord.ExceptionCode);
+		}
+		GLOBAL_continueStatus = DBG_EXCEPTION_NOT_HANDLED;
+	}
+}
+
 DebuggerImpl::DebuggerImpl(LPCTSTR debugeePath, HWND dialogHandle)
 	: DebuggeePath(debugeePath), DialogHandle(dialogHandle), OsBreakpointHit(false)
 {
@@ -222,92 +315,35 @@ void DebuggerImpl::DebuggerThreadProc()
 			switch (debugEvent.dwDebugEventCode)
 			{
 			case CREATE_PROCESS_DEBUG_EVENT:
-			{
-				eventMessage = GetFileNameFromHandle(debugEvent.u.CreateProcessInfo.hFile);
-
-				// insert break point instruction at program start
-				{
-					DWORD dwStartAddress = GetStartAddress(processInfo.hProcess, processInfo.hThread);
-					BYTE cInstruction;
-					DWORD dwReadBytes;
-					ReadProcessMemory(processInfo.hProcess, (void*)dwStartAddress, &cInstruction, 1, &dwReadBytes);
-					BYTE originalInstruction = cInstruction;
-					cInstruction = 0xCC;
-					WriteProcessMemory(processInfo.hProcess, (void*)dwStartAddress, &cInstruction, 1, &dwReadBytes);
-					FlushInstructionCache(processInfo.hProcess, (void*)dwStartAddress, 1);
-				}
-			}
-			break;
+				HandleCreateProcessDebugEvent();
+				break;
 
 			case CREATE_THREAD_DEBUG_EVENT:
-				eventMessage = WStringFormat(
-					L"Thread 0x%x (Id. %d) created at: 0x%x",
-					debugEvent.u.CreateThread.hThread,
-					debugEvent.dwThreadId,
-					debugEvent.u.CreateThread.lpStartAddress);
+				HandleCreateThreadDebugEvent();
 				break;
 
 			case EXIT_THREAD_DEBUG_EVENT:
-				eventMessage = WStringFormat(
-					L"Thread %d exited with code: %d",
-					debugEvent.dwThreadId,
-					debugEvent.u.ExitThread.dwExitCode);
+				HandleExitThreadDebugEvent();
 				break;
 
 			case EXIT_PROCESS_DEBUG_EVENT:
-				eventMessage = WStringFormat(L"0x%x", debugEvent.u.ExitProcess.dwExitCode);
-				continueDebugging = false;
+				HandleExitProcessDebugEvent();
 				break;
 
 			case LOAD_DLL_DEBUG_EVENT:
-				eventMessage = GetFileNameFromHandle(debugEvent.u.LoadDll.hFile); "";
-				DLLNameMap.insert(std::make_pair(debugEvent.u.LoadDll.lpBaseOfDll, eventMessage));
-				eventMessage += WStringFormat(L" %x", debugEvent.u.LoadDll.lpBaseOfDll);
+				HandleLoadDllDebugEvent();
 				break;
 
 			case UNLOAD_DLL_DEBUG_EVENT:
-				{
-					std::wstring DLLName = DLLNameMap[debugEvent.u.UnloadDll.lpBaseOfDll];
-					eventMessage = WStringFormat(L"%ls", DLLName.c_str());
-				}
+				HandleUnloadDllDebugEvent();
 				break;
 
 			case OUTPUT_DEBUG_STRING_EVENT:
-				eventMessage = GetDebugStringFromDebugEvent(debugEvent, processInfo);
+				HandleOutputDebugStringEvent();
 				break;
 
 			case EXCEPTION_DEBUG_EVENT:
-				const EXCEPTION_DEBUG_INFO& exceptionInfo = debugEvent.u.Exception;
-				switch (exceptionInfo.ExceptionRecord.ExceptionCode)
-				{
-				case STATUS_BREAKPOINT:
-				{
-					// breakpoint that was set by the debugger
-					if (OsBreakpointHit)
-					{
-						CONTEXT lcContext;
-						lcContext.ContextFlags = CONTEXT_ALL;
-						GetThreadContext(processInfo.hThread, &lcContext);
-					}
-					// First brakpoint sent by OS
-					else
-					{
-						OsBreakpointHit = true;
-					}
-				}
-				eventMessage = L"Break point";
-				break;
-
-				default:
-					if (exceptionInfo.dwFirstChance == 1)
-					{
-						eventMessage = WStringFormat(
-							L"First chance exception at %x, exception code: 0x%08x",
-							exceptionInfo.ExceptionRecord.ExceptionAddress,
-							exceptionInfo.ExceptionRecord.ExceptionCode);
-					}
-					continueStatus = DBG_EXCEPTION_NOT_HANDLED;
-				}
+				HandleExceptionDebugEvent();
 				break;
 			}
 
