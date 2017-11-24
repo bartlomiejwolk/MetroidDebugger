@@ -25,17 +25,17 @@ private:
 	Process info returned by OS CreateProcess() function.
 	*/
 	// TODO rename to DebuggeeProcessInfo
-	PROCESS_INFORMATION ProcessInfo = {};
+	PROCESS_INFORMATION ProcessInfo;
 
 	/*
 	Last debug event info returned by OS function `WaitForDebugEvent()`.
 	*/
-	DEBUG_EVENT DebugEvent = {};
+	DEBUG_EVENT DebugEvent;
 
 	/*
 	Message to be displayed to the user on debug event.
 	*/
-	std::wstring EventMessage = {};
+	std::wstring EventMessage;
 
 	/*
 	True if the very first breakpoint sent by the OS on application start was hit.
@@ -45,12 +45,12 @@ private:
 	/*
 	Controls debugger loop. The debugger thread will end when this is set to false.
 	*/
-	bool ContinueDebugging = true;
+	bool ContinueDebugging;
 
 	/*
 	Use by `ContinueDebugEvent()` in the debugger loop to control debuggee.
 	*/
-	DWORD ContinueStatus = DBG_CONTINUE;
+	DWORD ContinueStatus;
 
 	/*
 	Cache used to store loaded DLL names. Used to report unloaded DLLs.

@@ -16,8 +16,16 @@
 
 #define BUFSIZE 512
 
-DebuggerImpl::DebuggerImpl(LPCTSTR debugeePath, HWND dialogHandle)
-	: DebuggeePath(debugeePath), DialogHandle(dialogHandle), OsBreakpointHit(false)
+DebuggerImpl::DebuggerImpl(LPCTSTR debugeePath, HWND dialogHandle) : 
+	DebuggeePath(debugeePath), 
+	DialogHandle(dialogHandle), 
+	ProcessInfo{},
+	DebugEvent{},
+	EventMessage{},
+	OsBreakpointHit(false),
+	ContinueDebugging(true),
+	ContinueStatus(DBG_CONTINUE),
+	DLLNameMap{}
 {
 }
 
