@@ -313,20 +313,35 @@ void DebuggerImpl::HandleExceptionDebugEvent()
 void DebuggerImpl::HandleStatusBreakpointExceptionCode()
 {
 	// breakpoint that was set by the debugger
-	// #TODO implement
 	if (OsBreakpointHit)
 	{
+		/* Restore previous instruction */
+		DWORD dwWriteSize;
+		WriteProcessMemory(
+			DebuggeeProcessInfo.hProcess,
+			(void*)DebuggeeStartAddress,
+			&OryginalInstruction,
+			1,
+			&dwWriteSize);
+
+		FlushInstructionCache(DebuggeeProcessInfo.hProcess, (void*)DebuggeeStartAddress, 1);
+
+		/* Move instruction pointer back one byte */
 		CONTEXT lcContext;
 		lcContext.ContextFlags = CONTEXT_ALL;
 		GetThreadContext(DebuggeeProcessInfo.hThread, &lcContext);
+		lcContext.Eip--;
+		SetThreadContext(DebuggeeProcessInfo.hThread, &lcContext);
+	
+		EventMessage = L"Debugger break point";
 	}
 	// first brakpoint sent by the OS
 	else
 	{
 		OsBreakpointHit = true;
 		InsertBreakpointInstruction();
+		EventMessage = L"OS break point";
 	}
-	EventMessage = L"Break point";
 }
 
 void DebuggerImpl::InsertBreakpointInstruction()
@@ -341,7 +356,7 @@ void DebuggerImpl::InsertBreakpointInstruction()
 		1,
 		&dwReadBytes);
 
-	BYTE originalInstruction = cInstruction;
+	OryginalInstruction = cInstruction;
 	cInstruction = 0xCC;
 
 	WriteProcessMemory(

@@ -83,6 +83,10 @@ private:
 	*/
 	LPTHREAD_START_ROUTINE DebuggeeStartAddress;
 
+	/*
+	*/
+	BYTE OryginalInstruction;
+
 	void HandleCreateProcessDebugEvent();
 	void HandleCreateThreadDebugEvent();
 	void HandleExitThreadDebugEvent();
