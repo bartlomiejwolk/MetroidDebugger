@@ -13,8 +13,10 @@ public:
 	void DebuggerThreadProc();
 
 private:
-	// TODO rename to MainDialogHandle
-	HWND DialogHandle;
+	/*
+	Handle to the application main window.
+	*/
+	HWND MainDialogHandle;
 
 	/*
 	Full path to the executable to debug
@@ -24,8 +26,7 @@ private:
 	/*
 	Process info returned by OS CreateProcess() function.
 	*/
-	// TODO rename to DebuggeeProcessInfo
-	PROCESS_INFORMATION ProcessInfo;
+	PROCESS_INFORMATION DebuggeeProcessInfo;
 
 	/*
 	Last debug event info returned by OS function `WaitForDebugEvent()`.

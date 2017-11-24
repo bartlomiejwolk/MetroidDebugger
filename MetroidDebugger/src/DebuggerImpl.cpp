@@ -17,8 +17,8 @@
 
 DebuggerImpl::DebuggerImpl(LPCTSTR debugeePath, HWND dialogHandle) : 
 	DebuggeePath(debugeePath), 
-	DialogHandle(dialogHandle), 
-	ProcessInfo{},
+	MainDialogHandle(dialogHandle), 
+	DebuggeeProcessInfo{},
 	DebugEvent{},
 	EventMessage{},
 	OsBreakpointHit(false),
@@ -72,7 +72,7 @@ void DebuggerImpl::DebuggerThreadProc()
 			break;
 		}
 
-		SendMessage(DialogHandle, DEBUG_EVENT_MESSAGE, (WPARAM)&EventMessage, DebugEvent.dwDebugEventCode);
+		SendMessage(MainDialogHandle, DEBUG_EVENT_MESSAGE, (WPARAM)&EventMessage, DebugEvent.dwDebugEventCode);
 		ContinueDebugEvent(DebugEvent.dwProcessId, DebugEvent.dwThreadId, ContinueStatus);
 		ContinueStatus = DBG_CONTINUE;
 	}
@@ -84,7 +84,7 @@ void DebuggerImpl::CreateDebuggeeProcess()
 
 	ZeroMemory(&startupInfo, sizeof(startupInfo));
 	startupInfo.cb = sizeof(startupInfo);
-	ZeroMemory(&ProcessInfo, sizeof(ProcessInfo));
+	ZeroMemory(&DebuggeeProcessInfo, sizeof(DebuggeeProcessInfo));
 
 	CreateProcess(
 		DebuggeePath,
@@ -96,7 +96,7 @@ void DebuggerImpl::CreateDebuggeeProcess()
 		NULL,
 		NULL,
 		&startupInfo,
-		&ProcessInfo);
+		&DebuggeeProcessInfo);
 }
 
 std::wstring DebuggerImpl::GetDebugStringFromDebugEvent(
@@ -311,7 +311,7 @@ void DebuggerImpl::HandleUnloadDllDebugEvent()
 
 void DebuggerImpl::HandleOutputDebugStringEvent()
 {
-	EventMessage = GetDebugStringFromDebugEvent(DebugEvent, ProcessInfo);
+	EventMessage = GetDebugStringFromDebugEvent(DebugEvent, DebuggeeProcessInfo);
 }
 
 void DebuggerImpl::HandleExceptionDebugEvent()
@@ -326,7 +326,7 @@ void DebuggerImpl::HandleExceptionDebugEvent()
 		{
 			CONTEXT lcContext;
 			lcContext.ContextFlags = CONTEXT_ALL;
-			GetThreadContext(ProcessInfo.hThread, &lcContext);
+			GetThreadContext(DebuggeeProcessInfo.hThread, &lcContext);
 		}
 		// First brakpoint sent by OS
 		else
