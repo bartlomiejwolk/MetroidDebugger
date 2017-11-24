@@ -1,6 +1,7 @@
 #pragma once
 #include <afxcmn.h>
 #include <map>
+#include "DebuggerImpl.h"
 
 class CMetroidDebuggerDlg : public CDialog
 {
@@ -11,6 +12,9 @@ public:
 	Contains debug messages displayed to the user through List Control
 	*/
 	CListCtrl DebugEvents;
+
+	// TODO Make private. Create getter.
+	CString DebuggeePath;
 
 	CMetroidDebuggerDlg(CWnd* pParent = NULL);   // standard constructor
 
@@ -25,12 +29,6 @@ public:
 	Start debugging button handler.
 	*/
 	afx_msg void OnBnClicked_StartDebugging();
-	
-	/*
-	Creates process to debug, listenes and handles debug events, controls 
-	execution of the debugee. Method executed on a separate thread.
-	*/
-	void DebuggerThreadProc();
 
 	/*
 	Handles custom DEBUG_EVENT_MESSAGE (sent by DebuggerThreadProc()).
@@ -58,11 +56,6 @@ protected:
 
 private:
 	/*
-	Full path to the executable to debug
-	*/
-	CString DebugProcessName;
-
-	/*
 	*/
 	HANDLE DebugThread;
 
@@ -70,11 +63,6 @@ private:
 	True as long as the debug process runs.
 	*/
 	bool IsDebugging;
-
-	/*
-	True if the very first breakpoint sent by the OS on application start was hit.
-	*/
-	bool OsBreakpointHit;
 
 	/* Helper variables used to store debugger data. Used to populate text controls. */
 	int TotalEventsCount;
@@ -91,17 +79,7 @@ private:
 	CStatic ExceptionCountControl;
 
 	/*
-	*/
-	CString GetFileNameFromHandle(HANDLE hFile);
-
-	/*
-	*/
-	CString GetDebugStringFromDebugEvent(
-		const DEBUG_EVENT& debugEvent, 
-		const PROCESS_INFORMATION& processInfo) const;
-
-	/*
-	Updates UI properties.
+	Updates UI properties according to debugger state.
 	*/
 	void SetDebuggingModeUI();
 };

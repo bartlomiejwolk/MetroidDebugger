@@ -120,6 +120,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="src\AboutDlg.h" />
+    <ClInclude Include="src\DebuggerImpl.h" />
+    <ClInclude Include="src\Defines.h" />
     <ClInclude Include="src\MetroidDebuggerDlg.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="src\MetroidDebugger.h" />
@@ -127,6 +129,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\AboutDlg.cpp" />
+    <ClCompile Include="src\DebuggerImpl.cpp" />
     <ClCompile Include="src\MetroidDebuggerDlg.cpp" />
     <ClCompile Include="src\MetroidDebugger.cpp" />
   </ItemGroup>
