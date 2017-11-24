@@ -20,6 +20,7 @@ private:
 	*/
 	LPCTSTR DebuggeePath;
 	
+	// TODO rename to MainDialogHandle
 	HWND DialogHandle;
 
 	/*
@@ -27,17 +28,37 @@ private:
 	*/
 	bool OsBreakpointHit;
 
-	// TODO rename
+	/*
+	Message to be displayed to the user on debug event.
+	*/
 	std::wstring EventMessage = {};
 
+	/*
+	Last debug event info returned by OS function `WaitForDebugEvent()`.
+	*/
 	DEBUG_EVENT DebugEvent = {};
 
+	/*
+	Controls debugger loop. The debugger thread will end when this is set to false.
+	*/
 	bool ContinueDebugging = true;
 
+	/*
+	Cache used to store loaded DLL names. Used to report unloaded DLLs.
+	LPVOID - pointer to DLL base
+	wstring - DLL name
+	*/
 	std::map<LPVOID, std::wstring> DLLNameMap;
 
+	/*
+	Process info returned by OS CreateProcess() function.
+	*/
+	// TODO rename to DebuggeeProcessInfo
 	PROCESS_INFORMATION ProcessInfo = {};
 	
+	/*
+	Use by `ContinueDebugEvent()` in the debugger loop to control debuggee.
+	*/
 	DWORD ContinueStatus = DBG_CONTINUE;
 
 	/*
