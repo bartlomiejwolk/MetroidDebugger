@@ -73,7 +73,9 @@ void DebuggerImpl::DebuggerThreadProc()
 			break;
 		}
 
+		// notify application main window
 		SendMessage(MainDialogHandle, DEBUG_EVENT_MESSAGE, (WPARAM)&EventMessage, DebugEvent.dwDebugEventCode);
+
 		ContinueDebugEvent(DebugEvent.dwProcessId, DebugEvent.dwThreadId, ContinueStatus);
 		ContinueStatus = DBG_CONTINUE;
 	}
@@ -305,11 +307,15 @@ void DebuggerImpl::HandleExceptionDebugEvent()
 	case STATUS_BREAKPOINT:
 		HandleStatusBreakpointExceptionCode();
 		break;
+	case STATUS_SINGLE_STEP:
+		HandleSingleStepExceptionCode();
+		break;
 	default:
 		HandleOtherExceptionCode(exceptionInfo);
 	}
 }
 
+// TODO rename to HandleBreakpointExceptionCode()
 void DebuggerImpl::HandleStatusBreakpointExceptionCode()
 {
 	// breakpoint that was set by the debugger
@@ -342,6 +348,11 @@ void DebuggerImpl::HandleStatusBreakpointExceptionCode()
 		InsertBreakpointInstruction();
 		EventMessage = L"OS break point";
 	}
+}
+
+void DebuggerImpl::HandleSingleStepExceptionCode()
+{
+
 }
 
 void DebuggerImpl::InsertBreakpointInstruction()

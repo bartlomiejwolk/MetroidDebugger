@@ -41,6 +41,8 @@ private:
 	/*
 	True if the very first breakpoint sent by the OS on application start was hit.
 	*/
+	// TODO instead of this flag, keep track of all set breakpoints.
+	// OS breakpoint will not be on that list.
 	bool OsBreakpointHit;
 
 	/*
@@ -94,6 +96,7 @@ private:
 	void HandleLoadDllDebugEvent();
 	void HandleUnloadDllDebugEvent();
 	void HandleOutputDebugStringEvent();
+	void HandleSingleStepExceptionCode();
 	void HandleExceptionDebugEvent();
 
 	void HandleStatusBreakpointExceptionCode();
