@@ -326,7 +326,7 @@ void DebuggerImpl::HandleStatusBreakpointExceptionCode()
 		WriteProcessMemory(
 			DebuggeeProcessInfo.hProcess,
 			(void*)DebuggeeStartAddress,
-			&OryginalInstruction,
+			&OriginalInstruction,
 			1,
 			&dwWriteSize);
 
@@ -367,7 +367,7 @@ void DebuggerImpl::InsertBreakpointInstruction()
 		1,
 		&dwReadBytes);
 
-	OryginalInstruction = cInstruction;
+	OriginalInstruction = cInstruction;
 	cInstruction = 0xCC;
 
 	WriteProcessMemory(

@@ -87,7 +87,7 @@ private:
 
 	/*
 	*/
-	BYTE OryginalInstruction;
+	BYTE OriginalInstruction;
 
 	void HandleCreateProcessDebugEvent();
 	void HandleCreateThreadDebugEvent();
